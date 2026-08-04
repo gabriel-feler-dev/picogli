@@ -18,6 +18,13 @@ export default defineConfig({
         react(),
         tailwindcss(),
     ],
+    resolve: {
+        alias: {
+            // Espelha o `paths` do tsconfig.json. Sem isto o Vite não
+            // resolve `@/Components/...` e o build quebra.
+            '@': '/resources/js',
+        },
+    },
     server: {
         watch: {
             ignored: ['**/storage/framework/views/**'],

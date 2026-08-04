@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Domain\Metrics\MetricsConfig;
+use App\Domain\Presentation\MetricTranslator;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -18,6 +19,13 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(
             MetricsConfig::class,
             fn (): MetricsConfig => MetricsConfig::fromArray(config('clinical')),
+        );
+
+        // Mesma borda: o tradutor recebe as metas resolvidas, não chama
+        // `config()`. Assim ele continua testável passando um array literal.
+        $this->app->singleton(
+            MetricTranslator::class,
+            fn (): MetricTranslator => new MetricTranslator(config('clinical.targets')),
         );
     }
 

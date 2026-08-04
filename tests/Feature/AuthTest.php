@@ -106,15 +106,17 @@ describe('isolamento entre usuários — o teste que mais importa', function () 
         // Mas o nosso usuário não tem nada.
         $this->actingAs($this->user)->get('/dashboard')
             ->assertInertia(fn (Assert $page) => $page
-                ->where('importsCount', 0)
-                ->where('readingsCount', 0)
+                ->where('isEmpty', true)
+                ->where('summary.coverage.reading_count', 0)
+                ->where('summary.metrics', [])
             );
 
-        // E o outro vê o próprio.
+        // E o outro vê o próprio, com o período dele.
         $this->actingAs($outro)->get('/dashboard')
             ->assertInertia(fn (Assert $page) => $page
-                ->where('importsCount', 1)
-                ->where('readingsCount', 3616)
+                ->where('isEmpty', false)
+                ->where('summary.coverage.reading_count', 3616)
+                ->where('summary.period.to', '2026-07-29')
             );
     });
 });

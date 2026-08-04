@@ -21,37 +21,15 @@ beforeEach(function () {
 it('responde com uma página Inertia, não HTML solto', function () {
     $this->get('/dashboard')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page->component('Health'));
+        ->assertInertia(fn (Assert $page) => $page->component('Dashboard'));
 });
 
 it('entrega os props do servidor', function () {
     $this->get('/dashboard')->assertInertia(fn (Assert $page) => $page
-        ->where('appName', config('app.name'))
-        ->has('phase')
-        ->has('importsCount')
-        ->has('readingsCount')
+        ->has('summary')
+        ->has('summary.coverage')
+        ->has('isEmpty')
     );
-});
-
-// ⚠️ NFR-201 — o React recebe números prontos. Se a contagem fosse feita no
-// componente, este teste passaria mesmo com o prop ausente, e a divergência com
-// a fase 5 só apareceria em produção.
-it('as contagens vêm calculadas do servidor', function () {
-    $this->get('/dashboard')->assertInertia(fn (Assert $page) => $page
-        ->where('importsCount', 0)
-        ->where('readingsCount', 0)
-    );
-
-    App\Models\Import::create([
-        'user_id' => $this->user->id,
-        'original_filename' => 'x.csv',
-        'file_hash' => str_repeat('b', 64),
-        'timezone' => 'America/Sao_Paulo',
-        'glucose_unit' => 'mg/dL',
-        'status' => App\Models\Import::STATUS_DONE,
-    ]);
-
-    $this->get('/dashboard')->assertInertia(fn (Assert $page) => $page->where('importsCount', 1));
 });
 
 it('o template raiz carrega os assets compilados', function () {
