@@ -211,6 +211,9 @@ class ImportCsvJob implements ShouldQueue
             );
         }
 
+        // ── Dispara o cálculo de métricas NA FILA (ADR-5, T107.3) ────────
+        ComputeMetricsJob::dispatch($this->userId);
+
         if ($settings->conflicts !== []) {
             $import->update([
                 'parse_warnings' => [...$this->warnings, ...$settings->conflicts],
