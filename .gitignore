@@ -24,10 +24,19 @@ storage/app/private/
 *.local.md
 /scratch/
 
-# Especificação de trabalho — contém o gabarito de testes com métricas
-# clínicas reais (TIR, GMI, episódios de hipoglicemia com data/hora).
-# Fica local.
+# ─────────────────────────────────────────────────────────────
+#  SPEC-DRIVEN DEVELOPMENT — artefatos locais, não versionados
+# ─────────────────────────────────────────────────────────────
+# Decisão do dono do projeto: as especificações ficam apenas na máquina
+# local. Duas razões — o gabarito de testes carrega métricas clínicas
+# reais, e o desenvolvimento é individual.
+#
+# Consequência aceita: spec fora do git é spec sem backup.
 PicoGli.md
+/.specify/
+/specs/
+AGENTS.md
+CLAUDE.md
 
 # ─────────────────────────────────────────────────────────────
 #  Laravel
