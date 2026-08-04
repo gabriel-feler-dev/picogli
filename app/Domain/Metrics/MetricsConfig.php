@@ -21,12 +21,17 @@ final readonly class MetricsConfig
      * @param  array{intercept: float, slope: float}  $gmi
      * @param  array{min_days: int, min_coverage: float, min_days_rounding_floor: float}  $validity
      * @param  array{readings_per_day: int, interval_minutes: int, gap_threshold_minutes: int}  $sensor
+     * @param  array<string, array{threshold: int, min_duration_minutes: int, recovery_minutes: int}>  $episodes
      */
     public function __construct(
         public array $ranges,
         public array $gmi,
         public array $validity,
         public array $sensor,
+        // Sem default de propósito: um `= []` permitiria o EpisodeDetector
+        // rodar com config vazia e falhar lá dentro com "threshold null",
+        // longe da causa. Config incompleta deve quebrar na construção.
+        public array $episodes,
     ) {}
 
     /** @param array<string, mixed> $clinical conteúdo de config/clinical.php */
@@ -37,6 +42,7 @@ final readonly class MetricsConfig
             gmi: $clinical['gmi'],
             validity: $clinical['validity'],
             sensor: $clinical['sensor'],
+            episodes: $clinical['episodes'],
         );
     }
 }

@@ -31,6 +31,10 @@ function metricsConfig(): MetricsConfig
         'gmi' => ['intercept' => 3.31, 'slope' => 0.02392],
         'validity' => ['min_days' => 14, 'min_coverage' => 0.70, 'min_days_rounding_floor' => 13.5],
         'sensor' => ['readings_per_day' => 288, 'interval_minutes' => 5, 'gap_threshold_minutes' => 30],
+        'episodes' => [
+            'hypoglycemia' => ['threshold' => 70, 'min_duration_minutes' => 15, 'recovery_minutes' => 15],
+            'hyperglycemia_level2' => ['threshold' => 250, 'min_duration_minutes' => 30, 'recovery_minutes' => 15],
+        ],
     ]);
 }
 
@@ -162,6 +166,7 @@ describe('T101 — StatisticsCalculator', function () {
             'gmi' => ['intercept' => 3.31, 'slope' => 0.02392],
             'validity' => ['min_days' => 14, 'min_coverage' => 0.7, 'min_days_rounding_floor' => 13.5],
             'sensor' => ['readings_per_day' => 288, 'interval_minutes' => 5, 'gap_threshold_minutes' => 30],
+            'episodes' => [],
         ]);
 
         $series = GlucoseSeries::fromPairs([['2026-07-29 00:00:00', 300]]);

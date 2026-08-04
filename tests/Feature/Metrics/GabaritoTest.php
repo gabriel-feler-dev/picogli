@@ -8,6 +8,8 @@ use App\Domain\Metrics\MetricsConfig;
 use App\Domain\Metrics\StatisticsCalculator;
 use App\Domain\Metrics\ValidityGate;
 use App\Domain\Metrics\Value\GlucoseReading;
+use App\Domain\Metrics\EpisodeDetector;
+use App\Domain\Metrics\Value\EpisodeType;
 use App\Domain\Metrics\Value\GlucoseSeries;
 use App\Domain\Metrics\Value\Validity;
 use App\Jobs\ImportCsvJob;
@@ -122,4 +124,73 @@ it('a maior lacuna é a que vai interromper episódios no T104', function () {
     // nenhuma medição — afirmação sobre período em que ninguém mediu.
     expect($longest->contains(new DateTimeImmutable('2026-07-22 03:00:00')))->toBeTrue();
     expect($longest->contains(new DateTimeImmutable('2026-07-23 03:00:00')))->toBeFalse();
+});
+
+it('reproduz os 5 episodios de hipoglicemia, com a regra de termino de §D3 (FR-106)', function () {
+    $episodes = (new EpisodeDetector($this->config))
+        ->detect($this->series, EpisodeType::Hypoglycemia);
+
+    expect($episodes)->toHaveCount(5);
+
+    $actual = array_map(fn ($e) => [
+        $e->start->format('Y-m-d H:i'),
+        (int) $e->durationMinutes,
+        $e->nadir(),
+    ], $episodes);
+
+    // gabarito.md §Episodios, ATUALIZADO em 04/08/2026 pela regra correta.
+    // O episodio de 26/07 comeca as 03:41 (nao 03:56) e dura 45 min (nao 30):
+    // a volta a faixa durou 10 min, menos que os 15 de recuperacao.
+    expect($actual)->toBe([
+        ['2026-07-21 00:44', 40, 56],
+        ['2026-07-23 00:51', 20, 63],
+        ['2026-07-25 17:56', 20, 55],
+        ['2026-07-26 03:41', 45, 55],
+        ['2026-07-27 18:01', 15, 56],
+    ]);
+
+    // Nenhum nadir abaixo de 54 -> TBR nivel 2 = 0,0% no periodo.
+    foreach ($episodes as $episode) {
+        expect($episode->nadir())->toBeGreaterThanOrEqual(54);
+    }
+});
+
+it('reproduz os 2 episodios de hiperglicemia nivel 2 (FR-106)', function () {
+    $episodes = (new EpisodeDetector($this->config))
+        ->detect($this->series, EpisodeType::HyperglycemiaLevel2);
+
+    expect($episodes)->toHaveCount(2);
+
+    // O episodio de 25/07 dura 275 min (nao 245) e ATRAVESSA a meia-noite:
+    // a glicose tocou exatamente 250 as 23:51/23:56 e voltou a 255 as 00:01.
+    expect($episodes[0]->start->format('Y-m-d H:i'))->toBe('2026-07-25 19:41');
+    expect((int) $episodes[0]->durationMinutes)->toBe(275);
+    expect($episodes[0]->end->format('Y-m-d H:i'))->toBe('2026-07-26 00:16');
+    expect($episodes[0]->peak())->toBe(324);
+
+    expect($episodes[1]->start->format('Y-m-d H:i'))->toBe('2026-07-26 06:16');
+    expect((int) $episodes[1]->durationMinutes)->toBe(70);
+    expect($episodes[1]->peak())->toBe(271);
+});
+
+it('nenhum episodio atravessa a lacuna de 1347 min (FR-106)', function () {
+    $detector = new EpisodeDetector($this->config);
+
+    $all = [
+        ...$detector->detect($this->series, EpisodeType::Hypoglycemia),
+        ...$detector->detect($this->series, EpisodeType::HyperglycemiaLevel2),
+    ];
+
+    $gapStart = new DateTimeImmutable('2026-07-21 17:29:07');
+    $gapEnd = new DateTimeImmutable('2026-07-22 15:56:07');
+
+    foreach ($all as $episode) {
+        // Um episodio que comecasse antes e terminasse depois da lacuna
+        // afirmaria 22 h de excursao que ninguem mediu.
+        $spansGap = $episode->start < $gapStart && $episode->end > $gapEnd;
+
+        expect($spansGap)->toBeFalse(
+            "episodio de {$episode->start->format('Y-m-d H:i')} atravessa a lacuna"
+        );
+    }
 });
