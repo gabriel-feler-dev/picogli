@@ -1,0 +1,64 @@
+# ─────────────────────────────────────────────────────────────
+#  DADOS DE PACIENTE — NUNCA VERSIONAR
+# ─────────────────────────────────────────────────────────────
+# Exports do CareLink contêm nome, sobrenome, número de série da
+# bomba, data de nascimento e o histórico completo de glicemia.
+# Este repositório é público. Nada disso entra no git.
+#
+# Postura: bloqueio total + allowlist explícita (mesma lógica do
+# PayloadSanitizer). Denylist deixaria um formato novo passar calado.
+
+*.csv
+*.xlsx
+*.pdf
+
+# Única exceção: fixtures sintéticas, geradas, sem dado real de pessoa
+!tests/Fixtures/synthetic/*.csv
+
+# Diretórios de dado importado
+storage/carelink/
+storage/app/imports/
+storage/app/private/
+
+# Análises locais com números reais
+*.local.md
+/scratch/
+
+# Especificação de trabalho — contém o gabarito de testes com métricas
+# clínicas reais (TIR, GMI, episódios de hipoglicemia com data/hora).
+# Fica local.
+PicoGli.md
+
+# ─────────────────────────────────────────────────────────────
+#  Laravel
+# ─────────────────────────────────────────────────────────────
+/vendor
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/bootstrap/cache/*.php
+.env
+.env.*
+!.env.example
+.phpunit.result.cache
+.phpunit.cache
+auth.json
+npm-debug.log
+yarn-error.log
+Homestead.json
+Homestead.yaml
+
+# ─────────────────────────────────────────────────────────────
+#  Editores e SO
+# ─────────────────────────────────────────────────────────────
+/.idea
+/.vscode
+/.fleet
+/.nova
+/.zed
+.DS_Store
+Thumbs.db
+desktop.ini
