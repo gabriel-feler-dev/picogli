@@ -48,8 +48,11 @@ return new class extends Migration
             // §A7 — nunca assumir. Exports de outras regiões vêm em mmol/L.
             $table->string('glucose_unit', 10);
 
-            $table->date('period_start');
-            $table->date('period_end');
+            // Nullable: um export atípico sem Start/End Date ainda é
+            // importável — os eventos carregam os próprios instantes. A
+            // ausência vira aviso em parse_warnings, não crash.
+            $table->date('period_start')->nullable();
+            $table->date('period_end')->nullable();
 
             // FR-010 — transparência: o pior cenário é import silenciosamente
             // parcial. O usuário precisa ver que a contagem bate.

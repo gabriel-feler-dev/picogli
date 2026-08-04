@@ -43,6 +43,8 @@ final readonly class LinkedDose
         public ?string $cancellationReason,
         public ?DateTimeImmutable $deliveredAtLocal,
         public ?MealEvent $meal,
+        /** Coluna `Index` do CSV — desempata hora ambigua de DST (§A6). */
+        public ?float $deviceIndex,
         public int $sourceLine,
     ) {}
 

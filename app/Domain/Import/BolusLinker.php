@@ -235,6 +235,7 @@ final class BolusLinker
             cancellationReason: $request->cancellationReason,
             deliveredAtLocal: $delivery?->recordedAtLocal,
             meal: $meal,
+            deviceIndex: $request->deviceIndex ?? $delivery?->deviceIndex,
             sourceLine: $request->sourceLine,
         );
     }
@@ -252,6 +253,7 @@ final class BolusLinker
             cancellationReason: null,
             deliveredAtLocal: $delivery->recordedAtLocal,
             meal: $meal,
+            deviceIndex: $delivery->deviceIndex,
             sourceLine: $delivery->sourceLine,
         );
     }
