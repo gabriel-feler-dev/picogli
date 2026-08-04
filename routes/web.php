@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ImportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,6 +22,9 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+
+    Route::get('/importar', [ImportController::class, 'index'])->name('imports.index');
+    Route::post('/importar', [ImportController::class, 'store'])->name('imports.store');
 });
 
 Route::get('/', fn () => redirect()->route(auth()->check() ? 'dashboard' : 'login'));

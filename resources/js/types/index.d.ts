@@ -99,3 +99,34 @@ export interface PeriodSummaryPayload {
     has_stale_metrics: boolean;
     stale_message: string | null;
 }
+
+export interface ImportBlockPayload {
+    key: 'pump' | 'auto_insulin' | 'sensor';
+    label: string;
+    lines: number;
+    breakdown: { label: string; count: number; discarded: boolean }[];
+    events_and_discards: number;
+    /**
+     * Verdadeiro quando nenhuma linha do bloco ficou sem classificação.
+     * Uma linha pode gerar mais de um evento (§A4), então a soma pode passar
+     * do total de linhas — a conferência é `>=`, não `===`.
+     */
+    reconciles: boolean;
+}
+
+export interface ImportSummaryPayload {
+    id: number;
+    filename: string;
+    status: 'pending' | 'processing' | 'done' | 'failed';
+    device: string | null;
+    firmware: string | null;
+    cgm: string | null;
+    timezone: string;
+    glucose_unit: string;
+    period: { from: string | null; to: string | null };
+    imported_at: string | null;
+    blocks: ImportBlockPayload[];
+    written: Record<string, number>;
+    /** Avisos aparecem na tela. Esconder aviso é o mesmo que não ter aviso. */
+    warnings: string[];
+}

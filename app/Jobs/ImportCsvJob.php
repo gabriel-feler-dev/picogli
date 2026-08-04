@@ -58,11 +58,23 @@ class ImportCsvJob implements ShouldQueue
     /** @var list<BasalRateEvent> */
     private array $basalRates = [];
 
+    /**
+     * @param  bool  $deleteAfterImport  apaga o arquivo depois de importar
+     *
+     * ⚠️ Falso por padrão, e isso NÃO é descuido. O export é o objeto com mais
+     * PII do sistema, então apagá-lo após importar é a escolha certa para
+     * arquivo ENVIADO pelo usuário. Mas a fixture de teste vive em
+     * `storage/carelink/` e é usada por dezenas de testes — um default `true`
+     * apagaria o gabarito na primeira execução da suíte.
+     *
+     * Quem envia arquivo (o controller) liga a flag. Quem roda teste não.
+     */
     public function __construct(
         public readonly int $userId,
         public readonly string $path,
         public readonly string $timezone,
         public readonly ?string $originalFilename = null,
+        public readonly bool $deleteAfterImport = false,
     ) {}
 
     public function handle(
@@ -124,6 +136,13 @@ class ImportCsvJob implements ShouldQueue
                 $blockCounts = ['pump' => 0, 'auto_insulin' => 0, 'sensor' => 0];
                 $ignored = [];
 
+                // Reconciliação POR BLOCO: para cada bloco, quantas linhas
+                // viraram cada tipo de evento e quantas foram descartadas.
+                // É o que permite a tela de importação mostrar que
+                // 3.616 + 77 + 56 = 3.749 fecha (FR-207) — sem isso, o
+                // usuário só vê totais e tem de confiar.
+                $reconciliation = [];
+
                 // Bolus e refeições precisam do conjunto INTEIRO para parear
                 // (§A9, §A10). São ~160 objetos — irrelevante para memória.
                 // Todo o resto vai direto para o buffer do writer (NFR-001).
@@ -139,6 +158,9 @@ class ImportCsvJob implements ShouldQueue
                     if (! $result->producedEvents()) {
                         $reason = $result->ignoredReason->value;
                         $ignored[$reason] = ($ignored[$reason] ?? 0) + 1;
+                        $key = 'ignorada:'.$reason;
+                        $reconciliation[$row->block->value][$key] =
+                            ($reconciliation[$row->block->value][$key] ?? 0) + 1;
 
                         if ($result->isWarning()) {
                             $this->warn("Linha {$row->lineNumber} descartada: {$reason}");
@@ -148,6 +170,10 @@ class ImportCsvJob implements ShouldQueue
                     }
 
                     foreach ($result->events as $event) {
+                        $short = (new \ReflectionClass($event))->getShortName();
+                        $reconciliation[$row->block->value][$short] =
+                            ($reconciliation[$row->block->value][$short] ?? 0) + 1;
+
                         match (true) {
                             $event instanceof BolusRequestEvent => $requests[] = $event,
                             $event instanceof BolusDeliveryEvent => $deliveries[] = $event,
@@ -172,6 +198,7 @@ class ImportCsvJob implements ShouldQueue
                         ...$blockCounts,
                         'ignored' => $ignored,
                         'written' => $writer->writtenCounts(),
+                        'reconciliation' => $reconciliation,
                     ],
                     'parse_warnings' => $this->warnings === [] ? null : $this->warnings,
                     'status' => Import::STATUS_DONE,
@@ -186,6 +213,13 @@ class ImportCsvJob implements ShouldQueue
             ]);
 
             throw $e;
+        }
+
+        // O arquivo enviado sai de cena assim que o dado normalizado existe.
+        // É o objeto com mais PII do sistema, e o `file_hash` já garante a
+        // idempotência sem precisar dele.
+        if ($this->deleteAfterImport && is_file($this->path)) {
+            @unlink($this->path);
         }
 
         // ── 8. ENRIQUECE ─────────────────────────────────────────────────

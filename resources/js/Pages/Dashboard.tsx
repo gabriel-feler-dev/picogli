@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 
 import { AgpChart } from '@/Components/AgpChart';
 import { DayGrid } from '@/Components/DayGrid';
@@ -28,7 +28,15 @@ export default function Dashboard({ summary, isEmpty }: Props) {
 
             <div className="mx-auto max-w-4xl px-6 py-10">
                 <header>
-                    <h1 className="text-2xl font-semibold tracking-tight">Seus últimos dias</h1>
+                    <div className="flex items-baseline justify-between gap-4">
+                        <h1 className="text-2xl font-semibold tracking-tight">Seus últimos dias</h1>
+                        <Link
+                            href="/importar"
+                            className="text-sm font-medium text-sky-700 hover:underline dark:text-sky-400"
+                        >
+                            Importar arquivo
+                        </Link>
+                    </div>
 
                     {/* Artigo V — o denominador nunca fica escondido. */}
                     <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
