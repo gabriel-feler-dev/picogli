@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Import;
 use App\Models\SensorReading;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -22,13 +23,18 @@ use Inertia\Response;
  */
 class HealthController extends Controller
 {
-    public function __invoke(): Response
+    public function __invoke(Request $request): Response
     {
+        $userId = $request->user()->id;
+
         return Inertia::render('Health', [
             'appName' => config('app.name', 'PicoGli'),
-            'phase' => 'Fase 3 — dashboard · T200 wiring',
-            'importsCount' => Import::count(),
-            'readingsCount' => SensorReading::count(),
+            'phase' => 'Fase 3 — dashboard · T201',
+            // ⚠️ TODA query escopada por user_id. A primeira versão contava
+            // global, o que num app multiusuário vazaria dado de outra
+            // pessoa — e o teste de isolamento do T201.4 pega isso.
+            'importsCount' => Import::where('user_id', $userId)->count(),
+            'readingsCount' => SensorReading::where('user_id', $userId)->count(),
         ]);
     }
 }

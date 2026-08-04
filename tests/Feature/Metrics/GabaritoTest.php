@@ -9,6 +9,7 @@ use App\Domain\Metrics\StatisticsCalculator;
 use App\Domain\Metrics\ValidityGate;
 use App\Domain\Metrics\Value\GlucoseReading;
 use App\Domain\Metrics\EpisodeDetector;
+use App\Domain\Metrics\HourlyPercentileBuilder;
 use App\Domain\Metrics\Value\EpisodeType;
 use App\Domain\Metrics\Value\GlucoseSeries;
 use App\Domain\Metrics\Value\Validity;
@@ -192,5 +193,34 @@ it('nenhum episodio atravessa a lacuna de 1347 min (FR-106)', function () {
         expect($spansGap)->toBeFalse(
             "episodio de {$episode->start->format('Y-m-d H:i')} atravessa a lacuna"
         );
+    }
+});
+
+it('percentis por hora batem com o perfil do gabarito (FR-202)', function () {
+    $profile = (new HourlyPercentileBuilder())->build($this->series);
+
+    expect($profile)->toHaveCount(24);
+
+    // As 04h sao a hora mais estavel do periodo (media 123, 0% acima de 180):
+    // a mediana fica proxima da media e a banda e estreita.
+    expect($profile[4]->count)->toBe(156);
+    expect($profile[4]->median())->toBeGreaterThan(110.0)->toBeLessThan(135.0);
+
+    // As 20h sao a pior hora (media 171): mediana mais alta e banda mais larga.
+    expect($profile[20]->median())->toBeGreaterThan(150.0);
+    expect($profile[20]->median())->toBeGreaterThan($profile[4]->median());
+
+    // A banda das 20h e mais larga que a das 04h — e a leitura visual do AGP
+    // que sustenta "sua tarde e mais instavel que sua madrugada".
+    $spread04 = $profile[4]->p95 - $profile[4]->p5;
+    $spread20 = $profile[20]->p95 - $profile[20]->p5;
+
+    expect($spread20)->toBeGreaterThan($spread04);
+});
+
+it('a invariante de monotonicidade vale em TODA hora do arquivo real', function () {
+    foreach ((new HourlyPercentileBuilder())->build($this->series) as $hour => $p) {
+        // Banda invertida num grafico nao e lida como bug por ninguem.
+        expect($p->isMonotonic())->toBeTrue("percentis fora de ordem na hora {$hour}");
     }
 });
