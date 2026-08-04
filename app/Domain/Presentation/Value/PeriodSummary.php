@@ -28,12 +28,14 @@ final readonly class PeriodSummary
      * @param  array<int, mixed>  $hourlyPercentiles
      * @param  list<array<string, mixed>>  $dailyMetrics
      * @param  list<array<string, mixed>>  $gaps
+     * @param  array<string, array{min: int|null, max: int|null}>  $ranges
      */
     public function __construct(
         public string $from,
         public string $to,
         public Coverage $coverage,
         public Validity $validity,
+        public array $ranges,
         public array $metrics,
         public array $hourlyProfile,
         public array $hourlyPercentiles,
@@ -84,6 +86,11 @@ final readonly class PeriodSummary
                 'is_valid' => $this->validity->isValid(),
                 'message' => $this->validityMessage(),
             ],
+
+            // ⚠️ As faixas vêm do servidor para o gráfico DESENHAR a banda-alvo
+            // a partir de dado, não de constante em JS. Assim `70` e `180`
+            // existem num único lugar: config/clinical.php.
+            'ranges' => $this->ranges,
 
             'metrics' => array_map(
                 fn (TranslatedMetric $metric): array => $metric->toArray(),

@@ -6,6 +6,7 @@ namespace App\Domain\Presentation;
 
 use App\Domain\Metrics\CoverageCalculator;
 use App\Domain\Metrics\GapDetector;
+use App\Domain\Metrics\MetricsConfig;
 use App\Domain\Metrics\HourlyPercentileBuilder;
 use App\Domain\Metrics\HourlyProfileBuilder;
 use App\Domain\Metrics\Persistence\DailyMetricsWriter;
@@ -31,6 +32,7 @@ use DateTimeImmutable;
 final class DashboardPresenter
 {
     public function __construct(
+        private readonly MetricsConfig $config,
         private readonly StatisticsCalculator $statistics,
         private readonly CoverageCalculator $coverage,
         private readonly ValidityGate $validityGate,
@@ -78,6 +80,7 @@ final class DashboardPresenter
             to: $to,
             coverage: $coverage,
             validity: $validity,
+            ranges: $this->config->ranges,
             metrics: $this->translator->translate($metrics->statistics, $metrics->distribution, $validity),
             hourlyProfile: array_map(
                 fn (HourlyBucket $b): array => [
@@ -86,6 +89,9 @@ final class DashboardPresenter
                     'mean' => $b->isEmpty() ? null : round($b->mean, 1),
                     'percent_above' => $b->isEmpty() ? null : round($b->percentAbove, 1),
                     'percent_below' => $b->isEmpty() ? null : round($b->percentBelow, 1),
+                    // Classificação vem do servidor: escolher cor a partir de
+                    // valor clínico é decidir significado, não layout.
+                    'dominant_range' => $b->dominantRange,
                 ],
                 $this->hourlyProfile->build($series),
             ),
@@ -145,6 +151,14 @@ final class DashboardPresenter
                 'tir_pct' => round($d->tir_pct, 1),
                 'cv_pct' => round($d->cv_pct, 1),
                 'below_pct' => round($d->tbr_level1_pct + $d->tbr_level2_pct, 1),
+                // Matiz da célula: veio da meta em config, não de limiar
+                // inventado no componente.
+                'tir_status' => $d->tir_pct >= config('clinical.targets.time_in_range.value')
+                    ? 'met'
+                    : 'not_met',
+                // Artigo V no nível do dia: 34% de captura não é comparável com
+                // 100%, e a grade precisa deixar isso visível.
+                'low_coverage' => $d->coverage_pct < config('clinical.validity.min_coverage') * 100,
             ])
             ->all();
     }
@@ -175,6 +189,7 @@ final class DashboardPresenter
             // caminho que devolva métrica sem denominador.
             coverage: \App\Domain\Metrics\Value\Coverage::empty(),
             validity: \App\Domain\Metrics\Value\Validity::InsufficientDays,
+            ranges: $this->config->ranges,
             metrics: [],
             hourlyProfile: [],
             hourlyPercentiles: [],

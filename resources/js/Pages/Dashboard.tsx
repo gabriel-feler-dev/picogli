@@ -1,5 +1,8 @@
 import { Head } from '@inertiajs/react';
 
+import { AgpChart } from '@/Components/AgpChart';
+import { DayGrid } from '@/Components/DayGrid';
+import { HourlyBar } from '@/Components/HourlyBar';
 import { MetricCard } from '@/Components/MetricCard';
 import { ClinicalFooter } from '@/Components/ClinicalFooter';
 import type { PeriodSummaryPayload } from '@/types';
@@ -55,11 +58,37 @@ export default function Dashboard({ summary, isEmpty }: Props) {
                         Nenhuma leitura importada ainda.
                     </p>
                 ) : (
-                    <section className="mt-8 grid gap-4 sm:grid-cols-2">
-                        {summary.metrics.map((metric) => (
-                            <MetricCard key={metric.key} metric={metric} />
-                        ))}
-                    </section>
+                    <>
+                        <section className="mt-8 grid gap-4 sm:grid-cols-2">
+                            {summary.metrics.map((metric) => (
+                                <MetricCard key={metric.key} metric={metric} />
+                            ))}
+                        </section>
+
+                        <section className="mt-10">
+                            <h2 className="text-sm font-semibold">Seu dia típico</h2>
+                            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+                                Todos os dias do período sobrepostos, hora por hora.
+                            </p>
+                            <AgpChart percentiles={summary.hourly_percentiles} ranges={summary.ranges} />
+                        </section>
+
+                        <section className="mt-10">
+                            <h2 className="text-sm font-semibold">Onde estão os problemas</h2>
+                            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+                                A faixa em que sua glicose mais ficou, em cada hora.
+                            </p>
+                            <HourlyBar profile={summary.hourly_profile} />
+                        </section>
+
+                        <section className="mt-10">
+                            <h2 className="text-sm font-semibold">Dia por dia</h2>
+                            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+                                Quanto tempo na faixa boa em cada dia.
+                            </p>
+                            <DayGrid days={summary.daily_metrics} />
+                        </section>
+                    </>
                 )}
 
                 <ClinicalFooter />

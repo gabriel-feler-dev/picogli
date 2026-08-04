@@ -28,17 +28,20 @@ final class HourlyProfileBuilder
     {
         $targetLow = $this->config->ranges['target']['min'];
         $targetHigh = $this->config->ranges['target']['max'];
+        $rangeNames = array_keys($this->config->ranges);
 
         $sums = array_fill(0, 24, 0);
         $counts = array_fill(0, 24, 0);
         $above = array_fill(0, 24, 0);
         $below = array_fill(0, 24, 0);
+        $byRange = array_fill(0, 24, array_fill_keys($rangeNames, 0));
 
         foreach ($series->readings as $reading) {
             $hour = (int) $reading->at->format('G');
 
             $sums[$hour] += $reading->mgdl;
             $counts[$hour]++;
+            $byRange[$hour][$this->rangeFor($reading->mgdl)]++;
 
             if ($reading->mgdl > $targetHigh) {
                 $above[$hour]++;
@@ -58,9 +61,46 @@ final class HourlyProfileBuilder
                 mean: $n > 0 ? $sums[$hour] / $n : 0.0,
                 percentAbove: $n > 0 ? ($above[$hour] / $n) * 100 : 0.0,
                 percentBelow: $n > 0 ? ($below[$hour] / $n) * 100 : 0.0,
+                dominantRange: $n > 0 ? $this->dominant($byRange[$hour]) : null,
             );
         }
 
         return $profile;
+    }
+
+    /**
+     * A faixa com mais leituras na hora.
+     *
+     * Empate resolvido pela ordem das faixas em `config/clinical.php`, que vai
+     * da mais baixa para a mais alta. Isso faz o empate pender para o lado
+     * BAIXO — e é a escolha certa: hipoglicemia importa mais que hiperglicemia
+     * na mesma proporção de tempo.
+     *
+     * @param  array<string, int>  $counts
+     */
+    private function dominant(array $counts): string
+    {
+        $best = null;
+        $bestCount = -1;
+
+        foreach ($counts as $range => $count) {
+            if ($count > $bestCount) {
+                $best = $range;
+                $bestCount = $count;
+            }
+        }
+
+        return (string) $best;
+    }
+
+    private function rangeFor(int $value): string
+    {
+        foreach ($this->config->ranges as $name => $bounds) {
+            if ($value >= ($bounds['min'] ?? PHP_INT_MIN) && $value <= ($bounds['max'] ?? PHP_INT_MAX)) {
+                return $name;
+            }
+        }
+
+        throw new \LogicException("Leitura de {$value} mg/dL não cai em nenhuma faixa configurada.");
     }
 }

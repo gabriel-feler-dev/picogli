@@ -50,6 +50,8 @@ export interface HourlyBucketPayload {
     mean: number | null;
     percent_above: number | null;
     percent_below: number | null;
+    /** Classificada no SERVIDOR. null quando a hora não tem leitura. */
+    dominant_range: GlucoseRange | null;
 }
 
 export interface HourlyPercentilePayload {
@@ -71,6 +73,10 @@ export interface DailyMetricPayload {
     tir_pct: number;
     cv_pct: number;
     below_pct: number;
+    /** Matiz da célula, derivado da meta em config — não de limiar em JS. */
+    tir_status: MetricStatus;
+    /** Artigo V no nível do dia: cobertura baixa precisa ser visível. */
+    low_coverage: boolean;
 }
 
 export interface SensorGapPayload {
@@ -83,6 +89,8 @@ export interface PeriodSummaryPayload {
     period: { from: string; to: string };
     coverage: CoveragePayload;
     validity: ValidityPayload;
+    /** Limites clínicos vindos do servidor: `70` e `180` não são constante em JS. */
+    ranges: Record<GlucoseRange, { min: number | null; max: number | null }>;
     metrics: TranslatedMetricPayload[];
     hourly_profile: HourlyBucketPayload[];
     hourly_percentiles: HourlyPercentilePayload[];
