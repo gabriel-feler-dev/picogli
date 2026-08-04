@@ -32,6 +32,12 @@ storage/app/private/
 # reais, e o desenvolvimento é individual.
 #
 # Consequência aceita: spec fora do git é spec sem backup.
+#
+# ⚠️ ESCOPO DESTA REGRA, para não gerar confusão:
+# ela mantém a FONTE fora do git (CSV, gabarito, specs). Os arquivos de
+# TESTE reproduzem os mesmos valores clínicos nos asserts, e eles SÃO
+# versionados — decisão consciente do dono do projeto em 04/08/2026.
+# Não é descuido, e não deve ser "corrigido" reescrevendo histórico.
 PicoGli.md
 SETUP.md
 /.specify/
