@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -27,6 +28,44 @@ class DeviceSettingsSnapshot extends Model
             'isf_values' => 'array',
             'basal_profile' => 'array',
         ];
+    }
+
+    /**
+     * ⚠️ JSON não distingue `10.0` de `10`.
+     *
+     * `json_encode(10.0)` produz `10`, e `json_decode` devolve `int`. Sem
+     * normalizar, uma razão de carboidrato de 10 g/U volta como inteiro e a de
+     * 5,5 volta como float — o tipo passa a depender do valor.
+     *
+     * Isso é inofensivo em aritmética e venenoso em comparação estrita, que é
+     * exatamente o que a regra R6 da Spec 004 vai fazer ao cruzar o perfil
+     * configurado com o tempo acima da faixa.
+     */
+    protected function carbRatioProfile(): Attribute
+    {
+        return Attribute::make(get: $this->floatValues(...));
+    }
+
+    protected function isfValues(): Attribute
+    {
+        return Attribute::make(get: $this->floatValues(...));
+    }
+
+    protected function basalProfile(): Attribute
+    {
+        return Attribute::make(get: $this->floatValues(...));
+    }
+
+    /** @return array<array-key, float>|null */
+    private function floatValues(?string $raw): ?array
+    {
+        if ($raw === null) {
+            return null;
+        }
+
+        $decoded = json_decode($raw, true);
+
+        return is_array($decoded) ? array_map(floatval(...), $decoded) : null;
     }
 
     public function user(): BelongsTo

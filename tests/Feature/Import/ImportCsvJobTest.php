@@ -31,6 +31,8 @@ function runImport(int $userId, string $path, string $tz = 'America/Sao_Paulo'):
         app(App\Domain\Import\CarelinkCsvReader::class),
         app(App\Domain\Import\EventExploder::class),
         app(App\Domain\Import\BolusLinker::class),
+        app(App\Domain\Import\Persistence\MealEnricher::class),
+        app(App\Domain\Import\SettingsInferrer::class),
     );
 
     return Import::where('user_id', $userId)->latest('id')->firstOrFail();
@@ -162,6 +164,8 @@ describe('idempotência (FR-006)', function () {
             app(App\Domain\Import\CarelinkCsvReader::class),
             app(App\Domain\Import\EventExploder::class),
             app(App\Domain\Import\BolusLinker::class),
+            app(App\Domain\Import\Persistence\MealEnricher::class),
+            app(App\Domain\Import\SettingsInferrer::class),
         );
 
         expect($counts())->toBe($before);

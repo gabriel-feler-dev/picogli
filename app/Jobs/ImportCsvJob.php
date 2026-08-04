@@ -9,9 +9,13 @@ use App\Domain\Import\CarelinkCsvReader;
 use App\Domain\Import\EventExploder;
 use App\Domain\Import\Persistence\EventWriter;
 use App\Domain\Import\Persistence\ImportContext;
+use App\Domain\Import\Persistence\MealEnricher;
+use App\Domain\Import\SettingsInferrer;
+use App\Domain\Import\Value\Events\BasalRateEvent;
 use App\Domain\Import\Value\Events\BolusDeliveryEvent;
 use App\Domain\Import\Value\Events\BolusRequestEvent;
 use App\Domain\Import\Value\Events\MealEvent;
+use App\Models\DeviceSettingsSnapshot;
 use App\Models\Import;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -40,6 +44,20 @@ class ImportCsvJob implements ShouldQueue
     /** @var list<string> */
     private array $warnings = [];
 
+    /**
+     * Refeições e taxas de basal do import, guardadas para a inferência de
+     * configuração (etapa 9), que roda depois do commit.
+     *
+     * São ~190 objetos no export de referência — irrelevante para memória, e
+     * reler do banco só para isso seria trabalho a mais sem ganho.
+     *
+     * @var list<MealEvent>
+     */
+    private array $meals = [];
+
+    /** @var list<BasalRateEvent> */
+    private array $basalRates = [];
+
     public function __construct(
         public readonly int $userId,
         public readonly string $path,
@@ -51,6 +69,8 @@ class ImportCsvJob implements ShouldQueue
         CarelinkCsvReader $reader,
         EventExploder $exploder,
         BolusLinker $linker,
+        MealEnricher $enricher,
+        SettingsInferrer $inferrer,
     ): void {
         // Erro explícito em vez de warning do PHP virando ErrorException:
         // mensagem confusa numa fila é mensagem perdida.
@@ -86,7 +106,7 @@ class ImportCsvJob implements ShouldQueue
             ...$header->toImportAttributes(),
         ]);
 
-        foreach ($header->unknownKeys as $key => $value) {
+        foreach (array_keys($header->unknownKeys) as $key) {
             $this->warn("Chave desconhecida no cabeçalho: {$key}");
         }
 
@@ -109,7 +129,6 @@ class ImportCsvJob implements ShouldQueue
                 // Todo o resto vai direto para o buffer do writer (NFR-001).
                 $requests = [];
                 $deliveries = [];
-                $meals = [];
 
                 // ── 3-5. STREAM → EXPLODE → LIGA ──────────────────────────
                 foreach ($reader->streamRows($this->path, $this->warnFromReader(...)) as $row) {
@@ -132,17 +151,20 @@ class ImportCsvJob implements ShouldQueue
                         match (true) {
                             $event instanceof BolusRequestEvent => $requests[] = $event,
                             $event instanceof BolusDeliveryEvent => $deliveries[] = $event,
-                            $event instanceof MealEvent => $meals[] = $event,
+                            $event instanceof MealEvent => $this->meals[] = $event,
                             // ── 6-7. TEMPO + UPSERT (bufferizado) ─────────
+                            // Basal também é coletada: a etapa 9 reconstrói o
+                            // perfil a partir dela, depois do commit.
+                            $event instanceof BasalRateEvent => $this->collectBasal($event, $writer),
                             default => $writer->add($event),
                         };
                     }
                 }
 
-                $doses = $linker->link($requests, $deliveries, $meals, $this->warn(...));
+                $doses = $linker->link($requests, $deliveries, $this->meals, $this->warn(...));
 
                 $writer->flushAll();
-                $writer->writeMealsAndDoses($meals, $doses);
+                $writer->writeMealsAndDoses($this->meals, $doses);
 
                 // ── 10. FINALIZA ──────────────────────────────────────────
                 $import->update([
@@ -166,9 +188,40 @@ class ImportCsvJob implements ShouldQueue
             throw $e;
         }
 
-        // ── 8-9. Pós-import: MealEnricher (T011) e SettingsInferrer (T010).
-        // Ficam FORA da transação de propósito: dependem dos dados já
-        // gravados para consultar sensor_readings.
+        // ── 8. ENRIQUECE ─────────────────────────────────────────────────
+        // FORA da transação de propósito: consulta as leituras de sensor que
+        // acabaram de ser gravadas.
+        $enricher->enrich($this->userId, $import->id);
+
+        // ── 9. INFERE CONFIGURAÇÃO ───────────────────────────────────────
+        $settings = $inferrer->infer($this->meals, $this->basalRates);
+
+        if (! $settings->isEmpty()) {
+            // `updateOrCreate` na fingerprint: reimportar não cria snapshot
+            // duplicado, e um novo só nasce quando a configuração muda de fato.
+            DeviceSettingsSnapshot::updateOrCreate(
+                ['user_id' => $this->userId, 'fingerprint' => $settings->fingerprint()],
+                [
+                    'import_id' => $import->id,
+                    'valid_from' => $import->period_start ?? now()->toDateString(),
+                    'carb_ratio_profile' => $settings->carbRatioProfile,
+                    'isf_values' => $settings->isfValues,
+                    'basal_profile' => $settings->basalProfile,
+                ],
+            );
+        }
+
+        if ($settings->conflicts !== []) {
+            $import->update([
+                'parse_warnings' => [...$this->warnings, ...$settings->conflicts],
+            ]);
+        }
+    }
+
+    private function collectBasal(BasalRateEvent $event, EventWriter $writer): void
+    {
+        $this->basalRates[] = $event;
+        $writer->add($event);
     }
 
     private function warn(string $message): void
