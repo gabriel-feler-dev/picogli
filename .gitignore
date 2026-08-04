@@ -33,6 +33,7 @@ storage/app/private/
 #
 # Consequência aceita: spec fora do git é spec sem backup.
 PicoGli.md
+SETUP.md
 /.specify/
 /specs/
 AGENTS.md
