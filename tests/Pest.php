@@ -73,7 +73,7 @@ function requireReferenceExport(): string
  * Compara float com tolerância explícita.
  *
  * Usada nos asserts do gabarito: somas de insulina em ponto flutuante não
- * batem exatamente. `toBe(295.16)` falharia por 1e-13 e mandaria alguém
+ * batem exatamente. `toBe(295.15)` falharia por 1e-13 e mandaria alguém
  * caçar um bug que não existe.
  */
 expect()->extend('toBeCloseToValue', function (float $expected, float $tolerance = 0.005) {
