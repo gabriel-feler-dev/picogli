@@ -131,22 +131,26 @@ describe('a prosa', function () {
  */
 describe('o teste anti-sugestão (Artigo VI, camada 3)', function () {
 
-    /** Verbos e construções que transformariam observação em conduta. */
-    $conduta = [
-        'ajuste para', 'ajustar para', 'mude para', 'mudar para', 'troque para',
-        'reduza', 'reduzir para', 'aumente', 'aumentar para', 'use ',
-        'deveria ser', 'deveria dar', 'o ideal seria', 'o correto seria',
-        'recomendo', 'recomenda-se', 'sugerimos', 'experimente',
-    ];
+    /**
+     * Verbos e construções que transformariam observação em conduta.
+     *
+     * ⚠️ Fonte ÚNICA desde a fase 5 (`config/tone.php`). A lista era local aqui
+     * até o prompt de narrativa (T404) precisar dela: com duas cópias, uma
+     * construção acrescentada neste teste não chegaria ao modelo, e ele
+     * continuaria autorizado a usá-la.
+     */
+    // Closure, e nao valor: `config()` no carregamento do arquivo roda antes
+    // de o container subir. Mesmo padrao de `$rule = fn () => ...` nas regras.
+    $conduta = fn (): array => config('tone.forbidden_conduct');
 
     it('a prosa de R6 não sugere conduta', function () use ($conduta) {
         // Sem isto, uma lista esvaziada por acidente faria o teste passar
         // sem verificar nada — a falha silenciosa clássica de um guarda.
-        expect(count($conduta))->toBeGreaterThan(10);
+        expect(count($conduta()))->toBeGreaterThan(10);
 
         $prose = mb_strtolower($this->finding->fallbackProse);
 
-        foreach ($conduta as $frase) {
+        foreach ($conduta() as $frase) {
             expect(str_contains($prose, $frase))->toBeFalse(
                 "a prosa de R6 contém a conduta '{$frase}'"
             );
@@ -167,7 +171,7 @@ describe('o teste anti-sugestão (Artigo VI, camada 3)', function () {
         foreach ($violacoes as $texto) {
             $pego = false;
 
-            foreach ($conduta as $frase) {
+            foreach ($conduta() as $frase) {
                 if (str_contains(mb_strtolower($texto), $frase)) {
                     $pego = true;
                     break;
@@ -188,7 +192,7 @@ describe('o teste anti-sugestão (Artigo VI, camada 3)', function () {
         ];
 
         foreach ($legitimas as $texto) {
-            foreach ($conduta as $frase) {
+            foreach ($conduta() as $frase) {
                 expect(str_contains(mb_strtolower($texto), $frase))->toBeFalse(
                     "a varredura acusaria texto legítimo: \"{$texto}\""
                 );

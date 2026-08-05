@@ -6,6 +6,7 @@ use App\Domain\Ai\CooldownStore;
 use App\Domain\Ai\ModelChain;
 use App\Domain\Ai\NumberGuard;
 use App\Domain\Ai\PayloadSanitizer;
+use App\Domain\Ai\PromptBuilder;
 use App\Domain\Metrics\MetricsConfig;
 use App\Domain\Patterns\DaypartAggregator;
 use App\Domain\Patterns\PatternEngine;
@@ -15,6 +16,7 @@ use App\Domain\Patterns\Rules;
 use App\Domain\Presentation\LangProseRenderer;
 use App\Domain\Presentation\MetricTranslator;
 use App\Infrastructure\Ai\CacheCooldownStore;
+use App\Infrastructure\Ai\FilePromptBuilder;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -112,6 +114,20 @@ class AppServiceProvider extends ServiceProvider
             fn (): NumberGuard => new NumberGuard(
                 (float) config('ai.number_guard.rounding_tolerance'),
                 config('ai.number_guard.exempt_numbers'),
+            ),
+        );
+
+        // ⚠️ As listas dos Artigos IV e VI vêm de `config/tone.php` e são
+        // INTERPOLADAS no prompt. Fonte única: o arquivo do prompt fica limpo
+        // para a varredura de vocabulário, e a instrução que chega ao modelo é
+        // exatamente a que o teste cobra. Com as listas duplicadas, uma palavra
+        // acrescentada ao teste não chegaria ao modelo.
+        $this->app->singleton(
+            PromptBuilder::class,
+            fn (): PromptBuilder => new FilePromptBuilder(
+                resource_path(config('ai.narrative.prompt_path')),
+                config('tone.forbidden_vocabulary'),
+                config('tone.forbidden_conduct'),
             ),
         );
 

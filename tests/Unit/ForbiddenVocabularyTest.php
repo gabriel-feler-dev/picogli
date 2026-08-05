@@ -29,21 +29,45 @@ uses(TestCase::class);
  */
 function forbiddenVocabulary(): array
 {
-    return [
-        'você deveria',
-        'vocês deveriam',
-        'falta de',
-        'descuido',
-        'descontrole',
-        'descontrolado',
-        'errado',
-        'ruim',
-        'culpa',
-        'falhou',
-        'negligên',   // pega negligência/negligente
-        'preguiç',
-        'irresponsáv',
-    ];
+    // ⚠️ Fonte ÚNICA desde a fase 5 (`config/tone.php`). A lista tem três
+    // consumidores agora: esta varredura, a varredura anti-conduta de R6, e o
+    // PROMPT de narrativa — que precisa citar as palavras para instruir o
+    // modelo a não usá-las. Duplicada, uma palavra acrescentada aqui não
+    // chegaria ao modelo, e ele continuaria autorizado a usá-la.
+    return config('tone.forbidden_vocabulary');
+}
+
+/**
+ * Os arquivos de prompt, em texto cru.
+ *
+ * ⚠️ O prompt é o texto que PRODUZ o texto. Se ele disser "explique o que a
+ * pessoa fez de errado", nenhuma varredura sobre a saída conserta isso com
+ * confiança — e a violação sairia com a fluência de um modelo de linguagem.
+ *
+ * @return list<array{file: string, text: string}>
+ */
+function allPromptFiles(): array
+{
+    $path = resource_path('prompts');
+
+    if (! is_dir($path)) {
+        return [];
+    }
+
+    $prompts = [];
+
+    foreach (new DirectoryIterator($path) as $file) {
+        if ($file->isDot() || ! $file->isFile()) {
+            continue;
+        }
+
+        $prompts[] = [
+            'file' => 'resources/prompts/'.$file->getFilename(),
+            'text' => (string) file_get_contents($file->getPathname()),
+        ];
+    }
+
+    return $prompts;
 }
 
 /** Todas as strings de todos os arquivos de idioma, achatadas. */
@@ -126,6 +150,65 @@ it('nenhum texto voltado ao usuário usa vocabulário que julga a pessoa', funct
         "Artigo IV violado:\n".implode("\n", $violations)
         ."\n\nO texto deve descrever MECANISMO e CONSEQUÊNCIA, nunca caráter."
     );
+});
+
+it('existe pelo menos um prompt para varrer', function () {
+    // Mesma guarda do teste de idioma: sem ela, um diretório que desaparecesse
+    // daria falsa sensação de conformidade.
+    expect(allPromptFiles())->not->toBeEmpty();
+});
+
+/**
+ * ⚠️⚠️ **T404.2 — o prompt entra na MESMA varredura desde a fase 5.**
+ *
+ * O prompt é o texto que produz o texto. Varrer só a saída deixaria a causa
+ * livre — e cada geração seria diferente, então o defeito apareceria de forma
+ * intermitente.
+ *
+ * As palavras proibidas NÃO estão escritas no arquivo: elas são interpoladas de
+ * `config/tone.php` na renderização. É o que permite esta varredura existir sem
+ * acusar o próprio prompt — o erro que a fase 3 cometeu ao acusar a documentação
+ * da regra que ela explicava.
+ */
+it('nenhum prompt usa vocabulário que julga a pessoa', function () {
+    $violations = [];
+
+    foreach (allPromptFiles() as $prompt) {
+        $haystack = mb_strtolower($prompt['text']);
+
+        foreach (forbiddenVocabulary() as $forbidden) {
+            if (str_contains($haystack, mb_strtolower($forbidden))) {
+                $violations[] = sprintf('%s contém "%s"', $prompt['file'], $forbidden);
+            }
+        }
+    }
+
+    expect($violations)->toBe(
+        [],
+        "Artigo IV violado no prompt:\n".implode("\n", $violations)
+        ."\n\nO prompt é o texto que produz o texto — varrer só a saída não basta."
+    );
+});
+
+/**
+ * ⚠️ **T404.3 — a varredura anti-conduta (criada para R6 na fase 4) cobre o
+ * prompt.** A fronteira do Artigo VI não é sobre palavras isoladas, é sobre modo
+ * verbal: descrever no indicativo é permitido, prescrever no imperativo não.
+ */
+it('nenhum prompt escreve conduta médica em modo imperativo', function () {
+    $violations = [];
+
+    foreach (allPromptFiles() as $prompt) {
+        $haystack = mb_strtolower($prompt['text']);
+
+        foreach (config('tone.forbidden_conduct') as $conduct) {
+            if (str_contains($haystack, mb_strtolower($conduct))) {
+                $violations[] = sprintf('%s contém "%s"', $prompt['file'], $conduct);
+            }
+        }
+    }
+
+    expect($violations)->toBe([], "Artigo VI violado no prompt:\n".implode("\n", $violations));
 });
 
 it('a varredura pega uma violação de fato — o teste não é decorativo', function () {
