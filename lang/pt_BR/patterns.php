@@ -32,6 +32,62 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tela de avaliação
+    |--------------------------------------------------------------------------
+    |
+    | ⚠️ **O estado vazio é requisito, não sobra** (§D10). Período sem padrão
+    | detectado é BOA NOTÍCIA, e precisa soar como uma. A pressão de mostrar
+    | algo é justamente o que faz um produto de saúde virar gerador de
+    | ansiedade — e um achado de enchimento gasta a credibilidade dos achados
+    | de verdade.
+    |
+    | Note que `empty_*` e `no_report_*` dizem coisas DIFERENTES: um é "não
+    | encontramos nada para apontar", o outro é "ainda não há o que analisar".
+    |
+    */
+
+    'screen' => [
+        'title' => 'Avaliação do período',
+        'subtitle' => 'O que os números mostram além da média',
+
+        'empty_title' => 'Nenhum padrão para apontar neste período',
+        'empty_body' => 'As dez verificações rodaram e nenhuma encontrou algo '
+            .'que valesse destacar. Isso é uma boa notícia: quer dizer que não '
+            .'houve concentração de quedas, nem um dia dominando os números, '
+            .'nem descompasso entre a configuração da bomba e o resultado.',
+
+        'no_report_title' => 'Ainda não há avaliação',
+        'no_report_body' => 'Importe um export do CareLink para que as '
+            .'verificações possam rodar sobre os seus dados.',
+
+        'stale_notice' => 'Este relatório foi gerado por uma versão anterior das '
+            .'verificações. Os achados continuam válidos para o que mediam, mas '
+            .'vale gerar de novo.',
+
+        'failures_title' => 'Verificações que não puderam ser concluídas',
+        'failures_note' => 'As demais rodaram normalmente — o que aparece acima '
+            .'está completo para elas.',
+
+        'evidence_toggle' => 'Ver os números',
+        'evidence_hide' => 'Ocultar os números',
+        'evidence_note' => 'Todo número acima vem de uma leitura registrada no '
+            .'seu export.',
+
+        'handoff_badge' => 'Vale conversar com seu médico',
+        'generated_at' => 'Gerado em :at',
+    ],
+
+    'severity' => [
+        'priority' => 'Leia primeiro',
+        'attention' => 'Vale olhar',
+        'info' => 'Para saber',
+    ],
+
+    'period_label' => 'Período de :from a :to',
+    'coverage_summary' => ':span dias · :coverage% de captura do sensor',
+
+    /*
+    |--------------------------------------------------------------------------
     | Rótulos compartilhados
     |--------------------------------------------------------------------------
     */

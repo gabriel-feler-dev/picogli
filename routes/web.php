@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EvaluationController;
 use App\Http\Controllers\ImportController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,9 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+
+    // Fase 4 — motor de padrões. Lê o relatório gravado por `ComputePatternsJob`.
+    Route::get('/avaliacao', EvaluationController::class)->name('evaluation');
 
     Route::get('/importar', [ImportController::class, 'index'])->name('imports.index');
     Route::post('/importar', [ImportController::class, 'store'])->name('imports.store');

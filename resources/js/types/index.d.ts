@@ -130,3 +130,65 @@ export interface ImportSummaryPayload {
     /** Avisos aparecem na tela. Esconder aviso é o mesmo que não ter aviso. */
     warnings: string[];
 }
+
+/*
+ * Fase 4 — motor de padrões.
+ */
+
+export type FindingSeverity = 'priority' | 'attention' | 'info';
+
+/** Uma linha da evidência, com rótulo e valor JÁ FORMATADOS pelo servidor. */
+export interface EvidenceRow {
+    key: string;
+    label: string;
+    value: string;
+}
+
+/**
+ * Um achado pronto para a tela.
+ *
+ * ⚠️ Note que não existe aqui nenhum valor cru: `severity` vem com
+ * `severity_label`, e a evidência vem com rótulo e valor em texto. Se um dia
+ * aparecer um número puro sem o equivalente traduzido ao lado, é sinal de que a
+ * decisão escapou para o cliente (NFR-404).
+ */
+export interface PresentedFindingPayload {
+    rule_id: string;
+    title: string;
+    prose: string;
+    severity: FindingSeverity;
+    severity_label: string;
+    rank: number;
+    requires_clinical_handoff: boolean;
+    evidence: EvidenceRow[];
+}
+
+export interface RuleFailurePayload {
+    rule_id: string;
+    message: string;
+}
+
+/**
+ * O pacote da tela de avaliação.
+ *
+ * ⚠️ `has_report` distingue os DOIS estados vazios: sem relatório ("ainda não há
+ * o que analisar") e relatório com zero achados ("nenhum padrão para apontar" —
+ * boa notícia, §D10).
+ */
+export interface EvaluationPayload {
+    has_report: boolean;
+    period: { from: string; to: string; label: string } | null;
+    /** Artigo V — o denominador DAQUELE relatório, não o de hoje. */
+    coverage: {
+        percentage: number;
+        span_days: number;
+        validity: string;
+        summary: string;
+    } | null;
+    /** Já ordenados pelo servidor: severidade e depois rank. */
+    findings: PresentedFindingPayload[];
+    rule_failures: RuleFailurePayload[];
+    /** §D9 — relatório gerado por versão anterior. Sinaliza, não recalcula. */
+    is_stale: boolean;
+    generated_at: string | null;
+}
