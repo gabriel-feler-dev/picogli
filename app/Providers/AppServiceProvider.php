@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Domain\Ai\PayloadSanitizer;
 use App\Domain\Metrics\MetricsConfig;
 use App\Domain\Patterns\DaypartAggregator;
 use App\Domain\Patterns\PatternEngine;
@@ -64,6 +65,17 @@ class AppServiceProvider extends ServiceProvider
         // nascer com a prosa pronta (Artigo I) e não pode chamar `__()` (pureza).
         // A regra recebe a interface; quem lê `lang/` é esta implementação.
         $this->app->bind(ProseRenderer::class, LangProseRenderer::class);
+
+        // ⚠️ Artigo VII — a ÚNICA porta de saída em direção a um provedor de
+        // IA. A allowlist chega injetada; o domínio não chama `config()`.
+        //
+        // Registrado aqui, na fase 5, ANTES de existir qualquer provider —
+        // se viesse depois, haveria uma janela em que o código chama a API
+        // sem ele, e é nessa janela que alguém testa com dado real.
+        $this->app->singleton(
+            PayloadSanitizer::class,
+            fn (): PayloadSanitizer => new PayloadSanitizer(config('ai.payload_allowlist')),
+        );
 
         // ⚠️ As dez regras registradas num lugar só. A ORDEM AQUI NÃO IMPORTA
         // para o usuário: o motor ordena por (severidade, rank), e o rank vem do

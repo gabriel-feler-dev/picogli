@@ -23,10 +23,19 @@ declare(strict_types=1);
  */
 function patternsDomainFiles(): array
 {
-    $root = dirname(__DIR__, 4).'/app/Domain/Patterns';
+    $base = dirname(__DIR__, 4).'/app/Domain/';
     $files = [];
 
-    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root));
+    // ⚠️ `Ai/` entra na MESMA varredura desde a fase 5 (T400.7). A camada de
+    // IA é o lugar mais tentador para chamar `config()` ou `Log::` — e a
+    // chamada HTTP mora em `app/Infrastructure/`, que é borda.
+    $roots = array_filter([$base.'Patterns', $base.'Ai'], 'is_dir');
+
+    $iterator = new AppendIterator;
+
+    foreach ($roots as $root) {
+        $iterator->append(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root)));
+    }
 
     foreach ($iterator as $file) {
         if (! $file->isFile() || $file->getExtension() !== 'php') {
@@ -36,7 +45,7 @@ function patternsDomainFiles(): array
         $path = str_replace('\\', '/', $file->getPathname());
 
         // A borda tem licença para tocar banco — é o que ela é.
-        if (str_contains($path, '/Patterns/Persistence/')) {
+        if (str_contains($path, '/Persistence/')) {
             continue;
         }
 
@@ -79,7 +88,7 @@ function impurities(string $source): array
     return $found;
 }
 
-it('nenhuma classe de Patterns/ usa Eloquent, facade, config(), now() ou tradução', function () {
+it('nenhuma classe de Patterns/ nem de Ai/ usa Eloquent, facade, config(), now() ou tradução', function () {
     $violations = [];
 
     foreach (patternsDomainFiles() as $path => $source) {
