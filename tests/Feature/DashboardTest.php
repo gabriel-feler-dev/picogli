@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Domain\Import\BolusLinker;
+use App\Domain\Import\CarelinkCsvReader;
+use App\Domain\Import\EventExploder;
+use App\Domain\Import\Persistence\MealEnricher;
+use App\Domain\Import\SettingsInferrer;
 use App\Domain\Metrics\Persistence\DailyMetricsWriter;
 use App\Domain\Presentation\DashboardPresenter;
 use App\Domain\Presentation\Value\PeriodSummary;
@@ -18,11 +23,11 @@ use Inertia\Testing\AssertableInertia as Assert;
 function importFor(User $user): void
 {
     (new ImportCsvJob($user->id, requireReferenceExport(), 'America/Sao_Paulo'))->handle(
-        app(App\Domain\Import\CarelinkCsvReader::class),
-        app(App\Domain\Import\EventExploder::class),
-        app(App\Domain\Import\BolusLinker::class),
-        app(App\Domain\Import\Persistence\MealEnricher::class),
-        app(App\Domain\Import\SettingsInferrer::class),
+        app(CarelinkCsvReader::class),
+        app(EventExploder::class),
+        app(BolusLinker::class),
+        app(MealEnricher::class),
+        app(SettingsInferrer::class),
     );
 
     app(DailyMetricsWriter::class)->write($user->id);

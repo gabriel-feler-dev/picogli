@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Tests\TestCase;
 
 /**
  * T205.8 — NFR-201, verificado por busca
@@ -13,7 +14,7 @@ declare(strict_types=1);
  * narrasse o TIR calculado em PHP, os dois números apareceriam na mesma tela
  * com valores diferentes — e o usuário não teria como saber qual acreditar.
  */
-uses(Tests\TestCase::class);
+uses(TestCase::class);
 
 /** @return list<array{file: string, line: int, text: string}> */
 function javaScriptLines(): array
@@ -149,7 +150,7 @@ it('o eixo Y do AGP começa em zero (D4)', function () {
     $agp = file_get_contents(base_path('resources/js/Components/AgpChart.tsx'));
 
     // Eixo truncado exagera a variação e assusta sem motivo.
-    expect($agp)->toContain("domain={[0,");
+    expect($agp)->toContain('domain={[0,');
 });
 
 it('a faixa de cada hora vem classificada do servidor', function () {

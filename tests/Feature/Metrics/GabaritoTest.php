@@ -2,15 +2,20 @@
 
 declare(strict_types=1);
 
+use App\Domain\Import\BolusLinker;
+use App\Domain\Import\CarelinkCsvReader;
+use App\Domain\Import\EventExploder;
+use App\Domain\Import\Persistence\MealEnricher;
+use App\Domain\Import\SettingsInferrer;
 use App\Domain\Metrics\CoverageCalculator;
+use App\Domain\Metrics\EpisodeDetector;
 use App\Domain\Metrics\GapDetector;
+use App\Domain\Metrics\HourlyPercentileBuilder;
 use App\Domain\Metrics\MetricsConfig;
 use App\Domain\Metrics\StatisticsCalculator;
 use App\Domain\Metrics\ValidityGate;
-use App\Domain\Metrics\Value\GlucoseReading;
-use App\Domain\Metrics\EpisodeDetector;
-use App\Domain\Metrics\HourlyPercentileBuilder;
 use App\Domain\Metrics\Value\EpisodeType;
+use App\Domain\Metrics\Value\GlucoseReading;
 use App\Domain\Metrics\Value\GlucoseSeries;
 use App\Domain\Metrics\Value\Validity;
 use App\Jobs\ImportCsvJob;
@@ -28,11 +33,11 @@ beforeEach(function () {
     $this->user = User::factory()->create();
 
     (new ImportCsvJob($this->user->id, requireReferenceExport(), 'America/Sao_Paulo'))->handle(
-        app(App\Domain\Import\CarelinkCsvReader::class),
-        app(App\Domain\Import\EventExploder::class),
-        app(App\Domain\Import\BolusLinker::class),
-        app(App\Domain\Import\Persistence\MealEnricher::class),
-        app(App\Domain\Import\SettingsInferrer::class),
+        app(CarelinkCsvReader::class),
+        app(EventExploder::class),
+        app(BolusLinker::class),
+        app(MealEnricher::class),
+        app(SettingsInferrer::class),
     );
 
     // A borda: aqui o banco vira domínio puro. Daqui para dentro, nenhuma
@@ -197,7 +202,7 @@ it('nenhum episodio atravessa a lacuna de 1347 min (FR-106)', function () {
 });
 
 it('percentis por hora batem com o perfil do gabarito (FR-202)', function () {
-    $profile = (new HourlyPercentileBuilder())->build($this->series);
+    $profile = (new HourlyPercentileBuilder)->build($this->series);
 
     expect($profile)->toHaveCount(24);
 
@@ -219,7 +224,7 @@ it('percentis por hora batem com o perfil do gabarito (FR-202)', function () {
 });
 
 it('a invariante de monotonicidade vale em TODA hora do arquivo real', function () {
-    foreach ((new HourlyPercentileBuilder())->build($this->series) as $hour => $p) {
+    foreach ((new HourlyPercentileBuilder)->build($this->series) as $hour => $p) {
         // Banda invertida num grafico nao e lida como bug por ninguem.
         expect($p->isMonotonic())->toBeTrue("percentis fora de ordem na hora {$hour}");
     }

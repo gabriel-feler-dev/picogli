@@ -2,6 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Domain\Import\BolusLinker;
+use App\Domain\Import\CarelinkCsvReader;
+use App\Domain\Import\EventExploder;
+use App\Domain\Import\Persistence\MealEnricher;
+use App\Domain\Import\SettingsInferrer;
+use App\Domain\Presentation\ImportSummaryPresenter;
 use App\Jobs\ImportCsvJob;
 use App\Models\Import;
 use App\Models\SensorReading;
@@ -72,11 +78,11 @@ describe('upload', function () {
 
         (new ImportCsvJob($this->user->id, $temp, 'America/Sao_Paulo', 'copia.csv', deleteAfterImport: true))
             ->handle(
-                app(App\Domain\Import\CarelinkCsvReader::class),
-                app(App\Domain\Import\EventExploder::class),
-                app(App\Domain\Import\BolusLinker::class),
-                app(App\Domain\Import\Persistence\MealEnricher::class),
-                app(App\Domain\Import\SettingsInferrer::class),
+                app(CarelinkCsvReader::class),
+                app(EventExploder::class),
+                app(BolusLinker::class),
+                app(MealEnricher::class),
+                app(SettingsInferrer::class),
             );
 
         // O dado normalizado está no banco; o arquivo é o objeto com mais PII
@@ -94,11 +100,11 @@ describe('o resumo auditável', function () {
     beforeEach(function () {
         (new ImportCsvJob($this->user->id, requireReferenceExport(), 'America/Sao_Paulo', 'referencia.csv'))
             ->handle(
-                app(App\Domain\Import\CarelinkCsvReader::class),
-                app(App\Domain\Import\EventExploder::class),
-                app(App\Domain\Import\BolusLinker::class),
-                app(App\Domain\Import\Persistence\MealEnricher::class),
-                app(App\Domain\Import\SettingsInferrer::class),
+                app(CarelinkCsvReader::class),
+                app(EventExploder::class),
+                app(BolusLinker::class),
+                app(MealEnricher::class),
+                app(SettingsInferrer::class),
             );
     });
 
@@ -107,7 +113,7 @@ describe('o resumo auditável', function () {
     // depois, numa métrica errada.
     it('mostra que 3.616 + 77 + 56 = 3.749 no bloco Sensor', function () {
         $summary = collect(
-            app(App\Domain\Presentation\ImportSummaryPresenter::class)
+            app(ImportSummaryPresenter::class)
                 ->present(Import::firstOrFail())['blocks']
         )->keyBy('key');
 
@@ -129,7 +135,7 @@ describe('o resumo auditável', function () {
 
     it('reconcilia o bloco Pump, onde uma linha pode gerar dois eventos', function () {
         $summary = collect(
-            app(App\Domain\Presentation\ImportSummaryPresenter::class)
+            app(ImportSummaryPresenter::class)
                 ->present(Import::firstOrFail())['blocks']
         )->keyBy('key');
 
@@ -144,7 +150,7 @@ describe('o resumo auditável', function () {
 
     it('mostra o bloco de insulina automática', function () {
         $summary = collect(
-            app(App\Domain\Presentation\ImportSummaryPresenter::class)
+            app(ImportSummaryPresenter::class)
                 ->present(Import::firstOrFail())['blocks']
         )->keyBy('key');
 
@@ -155,7 +161,7 @@ describe('o resumo auditável', function () {
     it('não esconde avisos', function () {
         Import::firstOrFail()->update(['parse_warnings' => ['Linha 42 descartada: unrecognized']]);
 
-        $presented = app(App\Domain\Presentation\ImportSummaryPresenter::class)
+        $presented = app(ImportSummaryPresenter::class)
             ->present(Import::firstOrFail());
 
         // Esconder aviso é o mesmo que não ter aviso.

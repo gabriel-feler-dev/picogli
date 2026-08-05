@@ -97,7 +97,7 @@ describe('T010 — inferência isolada, sem banco', function () {
     }
 
     it('o valor mais recente vence quando o perfil muda no período', function () {
-        $settings = (new SettingsInferrer())->infer([
+        $settings = (new SettingsInferrer)->infer([
             mealAt('2026-07-16 08:00:00', 5.0, 30.0),
             mealAt('2026-07-28 08:00:00', 4.5, 30.0),   // ajuste do médico
         ]);
@@ -109,7 +109,7 @@ describe('T010 — inferência isolada, sem banco', function () {
     });
 
     it('não reporta conflito quando o perfil é estável', function () {
-        $settings = (new SettingsInferrer())->infer([
+        $settings = (new SettingsInferrer)->infer([
             mealAt('2026-07-16 08:00:00', 5.0, 30.0),
             mealAt('2026-07-28 08:00:00', 5.0, 30.0),
         ]);
@@ -118,13 +118,13 @@ describe('T010 — inferência isolada, sem banco', function () {
     });
 
     it('devolve vazio quando não há bolus com configuração', function () {
-        $settings = (new SettingsInferrer())->infer([mealAt('2026-07-16 08:00:00', null, null)]);
+        $settings = (new SettingsInferrer)->infer([mealAt('2026-07-16 08:00:00', null, null)]);
 
         expect($settings->isEmpty())->toBeTrue();
     });
 
     it('ignora basal zerada, que é suspensão e não perfil', function () {
-        $settings = (new SettingsInferrer())->infer(
+        $settings = (new SettingsInferrer)->infer(
             [mealAt('2026-07-16 08:00:00', 5.0, 30.0)],
             [
                 new BasalRateEvent(new DateTimeImmutable('2026-07-16 13:00:00'), 0.0, null, 1),

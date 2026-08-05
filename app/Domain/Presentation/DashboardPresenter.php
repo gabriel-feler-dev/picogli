@@ -6,17 +6,19 @@ namespace App\Domain\Presentation;
 
 use App\Domain\Metrics\CoverageCalculator;
 use App\Domain\Metrics\GapDetector;
-use App\Domain\Metrics\MetricsConfig;
 use App\Domain\Metrics\HourlyPercentileBuilder;
 use App\Domain\Metrics\HourlyProfileBuilder;
+use App\Domain\Metrics\MetricsConfig;
 use App\Domain\Metrics\Persistence\DailyMetricsWriter;
 use App\Domain\Metrics\StatisticsCalculator;
 use App\Domain\Metrics\ValidityGate;
+use App\Domain\Metrics\Value\Coverage;
 use App\Domain\Metrics\Value\GlucoseReading;
 use App\Domain\Metrics\Value\GlucoseSeries;
 use App\Domain\Metrics\Value\HourlyBucket;
 use App\Domain\Metrics\Value\HourlyPercentiles;
 use App\Domain\Metrics\Value\SensorGap;
+use App\Domain\Metrics\Value\Validity;
 use App\Domain\Presentation\Value\PeriodSummary;
 use App\Models\DailyMetrics;
 use App\Models\SensorReading;
@@ -187,8 +189,8 @@ final class DashboardPresenter
             to: $to ?? $today,
             // Mesmo vazio, cobertura e validade vêm preenchidas — não há
             // caminho que devolva métrica sem denominador.
-            coverage: \App\Domain\Metrics\Value\Coverage::empty(),
-            validity: \App\Domain\Metrics\Value\Validity::InsufficientDays,
+            coverage: Coverage::empty(),
+            validity: Validity::InsufficientDays,
             ranges: $this->config->ranges,
             metrics: [],
             hourlyProfile: [],

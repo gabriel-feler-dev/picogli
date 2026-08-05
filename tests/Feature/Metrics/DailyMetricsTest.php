@@ -2,10 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Domain\Import\BolusLinker;
+use App\Domain\Import\CarelinkCsvReader;
+use App\Domain\Import\EventExploder;
+use App\Domain\Import\Persistence\MealEnricher;
+use App\Domain\Import\SettingsInferrer;
 use App\Domain\Metrics\HourlyProfileBuilder;
 use App\Domain\Metrics\MetricsConfig;
 use App\Domain\Metrics\Persistence\DailyMetricsWriter;
-use App\Domain\Metrics\StatisticsCalculator;
 use App\Domain\Metrics\Value\GlucoseReading;
 use App\Domain\Metrics\Value\GlucoseSeries;
 use App\Jobs\ComputeMetricsJob;
@@ -13,6 +17,7 @@ use App\Jobs\ImportCsvJob;
 use App\Models\DailyMetrics;
 use App\Models\SensorReading;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Queue;
 
 /**
@@ -22,11 +27,11 @@ beforeEach(function () {
     $this->user = User::factory()->create();
 
     (new ImportCsvJob($this->user->id, requireReferenceExport(), 'America/Sao_Paulo'))->handle(
-        app(App\Domain\Import\CarelinkCsvReader::class),
-        app(App\Domain\Import\EventExploder::class),
-        app(App\Domain\Import\BolusLinker::class),
-        app(App\Domain\Import\Persistence\MealEnricher::class),
-        app(App\Domain\Import\SettingsInferrer::class),
+        app(CarelinkCsvReader::class),
+        app(EventExploder::class),
+        app(BolusLinker::class),
+        app(MealEnricher::class),
+        app(SettingsInferrer::class),
     );
 
     $this->config = MetricsConfig::fromArray(config('clinical'));
@@ -200,7 +205,7 @@ describe('T107 — daily_metrics (FR-105, FR-108)', function () {
             'tar_level1_pct' => 0, 'tar_level2_pct' => 0,
             'tbr_level1_pct' => 0, 'tbr_level2_pct' => 0,
             'metrics_version' => 'x',
-        ]))->toThrow(Illuminate\Database\QueryException::class);
+        ]))->toThrow(QueryException::class);
     });
 });
 
@@ -212,11 +217,11 @@ describe('T107.3 — o import despacha o cálculo NA FILA', function () {
         $other = User::factory()->create();
 
         (new ImportCsvJob($other->id, requireReferenceExport(), 'America/Sao_Paulo'))->handle(
-            app(App\Domain\Import\CarelinkCsvReader::class),
-            app(App\Domain\Import\EventExploder::class),
-            app(App\Domain\Import\BolusLinker::class),
-            app(App\Domain\Import\Persistence\MealEnricher::class),
-            app(App\Domain\Import\SettingsInferrer::class),
+            app(CarelinkCsvReader::class),
+            app(EventExploder::class),
+            app(BolusLinker::class),
+            app(MealEnricher::class),
+            app(SettingsInferrer::class),
         );
 
         // ADR-5: o import já consome o orçamento do worker (--max-time=55).

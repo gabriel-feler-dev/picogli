@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Domain\Metrics\MetricsConfig;
 use App\Domain\Patterns\DaypartAggregator;
 use App\Domain\Patterns\PatternsConfig;
+use App\Domain\Patterns\ProseRenderer;
+use App\Domain\Presentation\LangProseRenderer;
 use App\Domain\Presentation\MetricTranslator;
 use Illuminate\Support\ServiceProvider;
 
@@ -55,6 +57,11 @@ class AppServiceProvider extends ServiceProvider
                 config('clinical.dayparts'),
             ),
         );
+
+        // ⚠️ A borda que resolve a colisão entre §D3 e NFR-401: a regra precisa
+        // nascer com a prosa pronta (Artigo I) e não pode chamar `__()` (pureza).
+        // A regra recebe a interface; quem lê `lang/` é esta implementação.
+        $this->app->bind(ProseRenderer::class, LangProseRenderer::class);
     }
 
     /**

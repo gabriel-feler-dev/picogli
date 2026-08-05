@@ -50,7 +50,7 @@ function syntheticCsv(): string
 }
 
 beforeEach(function () {
-    $this->reader = new CarelinkCsvReader();
+    $this->reader = new CarelinkCsvReader;
     $this->path = syntheticCsv();
 });
 

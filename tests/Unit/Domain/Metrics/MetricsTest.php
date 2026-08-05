@@ -7,6 +7,7 @@ use App\Domain\Metrics\GapDetector;
 use App\Domain\Metrics\MetricsConfig;
 use App\Domain\Metrics\StatisticsCalculator;
 use App\Domain\Metrics\ValidityGate;
+use App\Domain\Metrics\Value\Coverage;
 use App\Domain\Metrics\Value\GlucoseSeries;
 use App\Domain\Metrics\Value\Validity;
 
@@ -197,27 +198,27 @@ describe('T102 — CoverageCalculator e ValidityGate', function () {
     it('reprova por DIAS quando o sensor funcionou perfeito', function () {
         // 3 dias, 100% de captura: o problema é o período, não o sensor —
         // e dizer "captura insuficiente" aqui seria mentira.
-        $coverage = new App\Domain\Metrics\Value\Coverage(864, 864, 3.0, 100.0);
+        $coverage = new Coverage(864, 864, 3.0, 100.0);
 
         expect((new ValidityGate($this->config))->evaluate($coverage))
             ->toBe(Validity::InsufficientDays);
     });
 
     it('reprova por CAPTURA quando há dias suficientes', function () {
-        $coverage = new App\Domain\Metrics\Value\Coverage(1600, 4032, 14.0, 39.7);
+        $coverage = new Coverage(1600, 4032, 14.0, 39.7);
 
         expect((new ValidityGate($this->config))->evaluate($coverage))
             ->toBe(Validity::InsufficientCoverage);
     });
 
     it('aprova 13,8 dias pela regra de arredondamento documentada', function () {
-        $coverage = new App\Domain\Metrics\Value\Coverage(3616, 3968, 13.78, 91.13);
+        $coverage = new Coverage(3616, 3968, 13.78, 91.13);
 
         expect((new ValidityGate($this->config))->evaluate($coverage))->toBe(Validity::Valid);
     });
 
     it('NÃO aprova 13,4 dias — o arredondamento tem piso', function () {
-        $coverage = new App\Domain\Metrics\Value\Coverage(3500, 3859, 13.4, 90.7);
+        $coverage = new Coverage(3500, 3859, 13.4, 90.7);
 
         expect((new ValidityGate($this->config))->evaluate($coverage))
             ->toBe(Validity::InsufficientDays);

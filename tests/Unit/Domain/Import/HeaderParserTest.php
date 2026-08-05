@@ -23,7 +23,7 @@ function headerLines(): array
 }
 
 beforeEach(function () {
-    $this->header = (new HeaderParser())->parse(headerLines());
+    $this->header = (new HeaderParser)->parse(headerLines());
 });
 
 describe('convenção inline (índices 6+)', function () {
@@ -118,7 +118,7 @@ describe('tolerância a formato futuro', function () {
         $lines = headerLines();
         $lines[2] .= ';Exercise Sensor;FitBand X9';
 
-        $header = (new HeaderParser())->parse($lines);
+        $header = (new HeaderParser)->parse($lines);
 
         expect($header->hasUnknownKeys())->toBeTrue();
         expect($header->unknownKeys)->toHaveKey('Exercise Sensor', 'FitBand X9');
@@ -127,14 +127,14 @@ describe('tolerância a formato futuro', function () {
     });
 
     it('sobrevive a cabeçalho truncado sem lançar', function () {
-        $header = (new HeaderParser())->parse(['Last Name;First Name', '"X";"Y"']);
+        $header = (new HeaderParser)->parse(['Last Name;First Name', '"X";"Y"']);
 
         expect($header->deviceModel)->toBeNull();
         expect($header->periodStart)->toBeNull();
     });
 
     it('sobrevive a arquivo sem cabeçalho', function () {
-        $header = (new HeaderParser())->parse([]);
+        $header = (new HeaderParser)->parse([]);
 
         expect($header->deviceModel)->toBeNull();
         expect($header->patient)->toBe([]);
@@ -154,7 +154,7 @@ describe('contra o arquivo real', function () {
         }
         fclose($handle);
 
-        $header = (new HeaderParser())->parse($lines);
+        $header = (new HeaderParser)->parse($lines);
 
         // gabarito.md §Cabeçalho
         expect($header->deviceModel)->toBe('MiniMed 780G MMT-1886');

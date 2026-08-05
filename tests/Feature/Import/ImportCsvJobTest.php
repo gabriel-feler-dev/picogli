@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Domain\Import\BolusLinker;
+use App\Domain\Import\CarelinkCsvReader;
+use App\Domain\Import\EventExploder;
+use App\Domain\Import\Persistence\MealEnricher;
+use App\Domain\Import\SettingsInferrer;
 use App\Jobs\ImportCsvJob;
 use App\Models\BasalRate;
 use App\Models\BgReading;
@@ -28,11 +33,11 @@ beforeEach(function () {
 function runImport(int $userId, string $path, string $tz = 'America/Sao_Paulo'): Import
 {
     (new ImportCsvJob($userId, $path, $tz, 'reference-export.csv'))->handle(
-        app(App\Domain\Import\CarelinkCsvReader::class),
-        app(App\Domain\Import\EventExploder::class),
-        app(App\Domain\Import\BolusLinker::class),
-        app(App\Domain\Import\Persistence\MealEnricher::class),
-        app(App\Domain\Import\SettingsInferrer::class),
+        app(CarelinkCsvReader::class),
+        app(EventExploder::class),
+        app(BolusLinker::class),
+        app(MealEnricher::class),
+        app(SettingsInferrer::class),
     );
 
     return Import::where('user_id', $userId)->latest('id')->firstOrFail();
@@ -161,11 +166,11 @@ describe('idempotência (FR-006)', function () {
 
         // Segunda tentativa: o hash já existe, aborta antes de processar.
         (new ImportCsvJob($this->user->id, $this->path, 'America/Sao_Paulo'))->handle(
-            app(App\Domain\Import\CarelinkCsvReader::class),
-            app(App\Domain\Import\EventExploder::class),
-            app(App\Domain\Import\BolusLinker::class),
-            app(App\Domain\Import\Persistence\MealEnricher::class),
-            app(App\Domain\Import\SettingsInferrer::class),
+            app(CarelinkCsvReader::class),
+            app(EventExploder::class),
+            app(BolusLinker::class),
+            app(MealEnricher::class),
+            app(SettingsInferrer::class),
         );
 
         expect($counts())->toBe($before);
@@ -201,13 +206,13 @@ describe('invariantes de tempo (FR-007)', function () {
         foreach (['sensor_readings', 'bg_readings', 'meals', 'insulin_doses',
             'basal_rates', 'device_events'] as $table) {
             $divergent = DB::table($table)
-                ->whereRaw("substr(recorded_at_local, 1, 10) <> local_date")
+                ->whereRaw('substr(recorded_at_local, 1, 10) <> local_date')
                 ->count();
 
             expect($divergent)->toBe(0, "{$table}: local_date divergiu de recorded_at_local");
 
             $wrongHour = DB::table($table)
-                ->whereRaw("cast(substr(recorded_at_local, 12, 2) as integer) <> local_hour")
+                ->whereRaw('cast(substr(recorded_at_local, 12, 2) as integer) <> local_hour')
                 ->count();
 
             expect($wrongHour)->toBe(0, "{$table}: local_hour divergiu de recorded_at_local");

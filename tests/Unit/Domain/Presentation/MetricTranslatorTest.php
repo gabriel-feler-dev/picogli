@@ -7,6 +7,7 @@ use App\Domain\Metrics\Value\RangeDistribution;
 use App\Domain\Metrics\Value\Validity;
 use App\Domain\Presentation\MetricTranslator;
 use App\Domain\Presentation\Value\MetricStatus;
+use Tests\TestCase;
 
 /**
  * T203 — FR-203 (cards traduzidos), spec.md §D1 e §D2
@@ -15,7 +16,7 @@ use App\Domain\Presentation\Value\MetricStatus;
  * de `Feature` cobriria isso — mas aqui o que interessa é a tradução, não o
  * HTTP, então o arquivo declara o que precisa e nada mais.
  */
-uses(Tests\TestCase::class);
+uses(TestCase::class);
 
 function translator(): MetricTranslator
 {

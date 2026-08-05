@@ -13,6 +13,7 @@ use App\Models\Meal;
 use App\Models\SensorReading;
 use App\Models\User;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -200,7 +201,7 @@ describe('casts e escopos', function () {
             'import_id' => $this->import->id, 'glucose_mgdl' => 117, 'isig' => 25.74,
             ...eventTime()])->fresh();
 
-        expect($reading->recorded_at_local)->toBeInstanceOf(Illuminate\Support\Carbon::class);
+        expect($reading->recorded_at_local)->toBeInstanceOf(Carbon::class);
         expect($reading->local_hour)->toBe(11);
         expect($reading->isig)->toBe(25.74);
 

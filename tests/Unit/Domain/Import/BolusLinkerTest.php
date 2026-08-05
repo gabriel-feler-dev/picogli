@@ -61,7 +61,7 @@ function mealEvent(string $time, float $carbs): MealEvent
 }
 
 beforeEach(function () {
-    $this->linker = new BolusLinker();
+    $this->linker = new BolusLinker;
 });
 
 describe('o trio (§A3)', function () {
@@ -174,7 +174,9 @@ describe('casos incompletos — todos são dado válido', function () {
             [],
             [bolusDelivery('11:54:31', 8.0, 85)],
             [],
-            function (string $m) use (&$warnings) { $warnings[] = $m; },
+            function (string $m) use (&$warnings) {
+                $warnings[] = $m;
+            },
         );
 
         expect($doses)->toHaveCount(1);
@@ -206,7 +208,9 @@ describe('casos incompletos — todos são dado válido', function () {
             [bolusRequest('11:49:09', 8.0, 85)],
             [bolusDelivery('11:54:31', 8.0, 85)],
             [mealEvent('11:49:09', 40.0), mealEvent('11:49:09', 20.0)],
-            function (string $m) use (&$warnings) { $warnings[] = $m; },
+            function (string $m) use (&$warnings) {
+                $warnings[] = $m;
+            },
         );
 
         expect($warnings)->toHaveCount(1);
@@ -240,8 +244,8 @@ describe('contra o arquivo real', function () {
 
     it('reproduz o gabarito de doses e o assert crítico de 295,150 U', function () {
         $path = requireReferenceExport();
-        $reader = new CarelinkCsvReader();
-        $exploder = new EventExploder();
+        $reader = new CarelinkCsvReader;
+        $exploder = new EventExploder;
 
         $requests = [];
         $deliveries = [];
@@ -271,7 +275,9 @@ describe('contra o arquivo real', function () {
             $requests,
             $deliveries,
             $meals,
-            function (string $m) use (&$warnings) { $warnings[] = $m; },
+            function (string $m) use (&$warnings) {
+                $warnings[] = $m;
+            },
         );
 
         // Pareamento limpo: nenhuma entrega órfã, nenhum número duplicado,

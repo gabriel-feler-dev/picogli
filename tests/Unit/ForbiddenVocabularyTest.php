@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Tests\TestCase;
 
 /**
  * T203.5 — Artigo IV, imposto por teste (spec.md §D2)
@@ -17,7 +18,7 @@ declare(strict_types=1);
 // `__()` e `base_path()` precisam do container. O binding de `Feature` daria
 // isso, mas este teste não é de feature — ele varre arquivos. Declarar aqui o
 // que precisa é mais honesto que movê-lo de pasta.
-uses(Tests\TestCase::class);
+uses(TestCase::class);
 
 /**
  * Vocabulário que julga a pessoa em vez de descrever o mecanismo.

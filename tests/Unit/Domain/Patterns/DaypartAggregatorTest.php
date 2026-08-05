@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Domain\Metrics\MetricsConfig;
 use App\Domain\Metrics\Value\GlucoseReading;
 use App\Domain\Metrics\Value\GlucoseSeries;
 use App\Domain\Patterns\DaypartAggregator;
@@ -13,39 +12,11 @@ use App\Domain\Patterns\Value\Daypart;
  *
  * Roda sem container: é a prova de que a agregação é domínio puro.
  */
-function daypartConfig(): MetricsConfig
-{
-    return new MetricsConfig(
-        ranges: [
-            'very_low' => ['max' => 53],
-            'low' => ['min' => 54, 'max' => 69],
-            'target' => ['min' => 70, 'max' => 180],
-            'high' => ['min' => 181, 'max' => 250],
-            'very_high' => ['min' => 251],
-        ],
-        gmi: ['intercept' => 3.31, 'slope' => 0.02392],
-        validity: ['min_days' => 14, 'min_coverage' => 0.70, 'min_days_rounding_floor' => 13.5],
-        sensor: ['readings_per_day' => 288, 'interval_minutes' => 5, 'gap_threshold_minutes' => 30],
-        episodes: [
-            'hypoglycemia' => ['threshold' => 70, 'min_duration_minutes' => 15, 'recovery_minutes' => 15],
-            'hyperglycemia_level2' => ['threshold' => 250, 'min_duration_minutes' => 30, 'recovery_minutes' => 15],
-        ],
-    );
-}
-
-function daypartBounds(): array
-{
-    return [
-        'dawn' => ['label' => 'madrugada', 'from' => 0, 'to' => 5],
-        'morning' => ['label' => 'manhã', 'from' => 6, 'to' => 11],
-        'afternoon' => ['label' => 'tarde', 'from' => 12, 'to' => 17],
-        'evening' => ['label' => 'noite', 'from' => 18, 'to' => 23],
-    ];
-}
-
 function aggregator(?array $bounds = null): DaypartAggregator
 {
-    return new DaypartAggregator(daypartConfig(), $bounds ?? daypartBounds());
+    // Fábricas em tests/Pest.php — carregamento garantido, sem depender de
+    // função declarada em outro arquivo de teste.
+    return new DaypartAggregator(patternsMetricsConfig(), $bounds ?? patternsDaypartBounds());
 }
 
 /** N leituras numa hora, das quais $above acima de 180. */
@@ -176,7 +147,7 @@ describe('o denominador (Artigo V dentro da regra)', function () {
 describe('validação dos limites (as três falhas silenciosas)', function () {
 
     it('recusa config que não casa com o enum', function () {
-        $bounds = daypartBounds();
+        $bounds = patternsDaypartBounds();
         $bounds['tarde_da_noite'] = ['label' => 'x', 'from' => 0, 'to' => 0];
 
         expect(fn () => aggregator($bounds))
@@ -186,7 +157,7 @@ describe('validação dos limites (as três falhas silenciosas)', function () {
     // Sem esta guarda as leituras da hora órfã sairiam da agregação sem erro
     // nenhum, e a soma dos n deixaria de fechar com o total da série.
     it('recusa hora que não pertence a nenhum período', function () {
-        $bounds = daypartBounds();
+        $bounds = patternsDaypartBounds();
         $bounds['evening']['to'] = 22;   // a hora 23 fica órfã
 
         expect(fn () => aggregator($bounds))
@@ -196,7 +167,7 @@ describe('validação dos limites (as três falhas silenciosas)', function () {
     // E sem esta, a leitura entraria duas vezes e o percentual continuaria
     // entre 0 e 100 — plausível e errado.
     it('recusa hora em dois períodos', function () {
-        $bounds = daypartBounds();
+        $bounds = patternsDaypartBounds();
         $bounds['morning']['from'] = 5;   // a hora 5 fica em dawn e em morning
 
         expect(fn () => aggregator($bounds))

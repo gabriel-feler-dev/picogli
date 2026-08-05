@@ -11,7 +11,7 @@ use App\Domain\Metrics\Value\GlucoseSeries;
  * Domínio puro: não toca banco nem sobe o framework.
  */
 beforeEach(function () {
-    $this->builder = new HourlyPercentileBuilder();
+    $this->builder = new HourlyPercentileBuilder;
 });
 
 describe('método de interpolação declarado', function () {

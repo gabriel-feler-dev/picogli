@@ -63,11 +63,11 @@ function row(BlockType $block, array $values, string $date = '2026/07/29', strin
         $fields[$index[$column]] = $value;
     }
 
-    return new CsvRow($block, $index, $fields, new LocaleNormalizer(), 42);
+    return new CsvRow($block, $index, $fields, new LocaleNormalizer, 42);
 }
 
 beforeEach(function () {
-    $this->exploder = new EventExploder();
+    $this->exploder = new EventExploder;
 });
 
 describe('bloco Sensor', function () {
@@ -357,7 +357,7 @@ describe('contra o arquivo real', function () {
 
     it('reproduz as contagens de evento do gabarito', function () {
         $path = requireReferenceExport();
-        $reader = new CarelinkCsvReader();
+        $reader = new CarelinkCsvReader;
 
         $byType = [];
         $byCategory = [];

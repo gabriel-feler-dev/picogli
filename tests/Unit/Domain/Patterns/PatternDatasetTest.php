@@ -2,16 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Domain\Import\Value\InferredSettings;
-use App\Domain\Metrics\StatisticsCalculator;
-use App\Domain\Metrics\Value\Coverage;
 use App\Domain\Metrics\Value\Episode;
 use App\Domain\Metrics\Value\EpisodeType;
-use App\Domain\Metrics\Value\GlucoseReading;
-use App\Domain\Metrics\Value\GlucoseSeries;
 use App\Domain\Metrics\Value\SensorGap;
-use App\Domain\Metrics\Value\Validity;
-use App\Domain\Patterns\DaypartAggregator;
 use App\Domain\Patterns\Value\CalibrationPair;
 use App\Domain\Patterns\Value\DailySnapshot;
 use App\Domain\Patterns\Value\Daypart;
@@ -28,47 +21,8 @@ use App\Domain\Patterns\Value\PatternDataset;
  *
  * Se um dia este teste precisar de banco, o §D2 foi violado em algum lugar.
  */
-function datasetFromArrays(array $overrides = []): PatternDataset
-{
-    $series = GlucoseSeries::of([
-        new GlucoseReading(new DateTimeImmutable('2026-07-16 03:00:00'), 120),
-        new GlucoseReading(new DateTimeImmutable('2026-07-16 14:00:00'), 200),
-        new GlucoseReading(new DateTimeImmutable('2026-07-17 20:00:00'), 260),
-    ]);
-
-    $statistics = new StatisticsCalculator(daypartConfig());
-    $aggregator = new DaypartAggregator(daypartConfig(), daypartBounds());
-
-    $defaults = [
-        'periodStart' => '2026-07-16',
-        'periodEnd' => '2026-07-29',
-        'series' => $series,
-        'metrics' => $statistics->calculate($series),
-        'coverage' => new Coverage(3, 4032, 13.8, 91.1),
-        'validity' => Validity::Valid,
-        'hourly' => [],
-        'dayparts' => $aggregator->aggregate($series),
-        'hypoEpisodes' => [],
-        'hyperEpisodes' => [],
-        'gaps' => [],
-        'daily' => [],
-        'meals' => [],
-        'autoInsulinByDate' => [],
-        'deviceEventCounts' => [],
-        'deviceCategoryCounts' => [],
-        'rewinds' => [],
-        'settings' => new InferredSettings([], [], null),
-        'calibrationPairs' => [],
-        'calibrationWindowMinutes' => 10,
-        'hasStaleMetrics' => false,
-        'metricsVersion' => '2026.08.1',
-    ];
-
-    return new PatternDataset(...array_merge($defaults, $overrides));
-}
-
 it('constrói sem banco, sem container e sem fixture', function () {
-    $dataset = datasetFromArrays();
+    $dataset = makePatternDataset();
 
     expect($dataset->series->count())->toBe(3);
     expect($dataset->isEmpty())->toBeFalse();
@@ -76,7 +30,7 @@ it('constrói sem banco, sem container e sem fixture', function () {
 });
 
 it('reusa os value objects das fases 1 e 2, não equivalentes novos', function () {
-    $dataset = datasetFromArrays([
+    $dataset = makePatternDataset([
         'hypoEpisodes' => [new Episode(
             EpisodeType::Hypoglycemia,
             new DateTimeImmutable('2026-07-21 00:44:00'),
@@ -99,7 +53,7 @@ it('reusa os value objects das fases 1 e 2, não equivalentes novos', function (
 });
 
 it('carrega cobertura e validade sempre (Artigo V)', function () {
-    $dataset = datasetFromArrays();
+    $dataset = makePatternDataset();
 
     expect($dataset->coverage->percentage)->toBe(91.1);
     expect($dataset->coverage->spanInDays)->toBe(13.8);
@@ -109,7 +63,7 @@ it('carrega cobertura e validade sempre (Artigo V)', function () {
 describe('os acessos de conveniência', function () {
 
     it('daypart() devolve as estatísticas do período', function () {
-        $dataset = datasetFromArrays();
+        $dataset = makePatternDataset();
 
         expect($dataset->daypart(Daypart::Afternoon)->count)->toBe(1);
         expect($dataset->daypart(Daypart::Afternoon)->aboveCount)->toBe(1);
@@ -117,7 +71,7 @@ describe('os acessos de conveniência', function () {
     });
 
     it('dailyByDate indexa por data', function () {
-        $dataset = datasetFromArrays(['daily' => [
+        $dataset = makePatternDataset(['daily' => [
             new DailySnapshot('2026-07-25', 281, 97.6, 159.0, 68.7, 42.2, 16.0, 2.5, 37.5, 24.0, 150.0),
             new DailySnapshot('2026-07-26', 288, 100.0, 154.0, 67.7, 35.5, 4.9, 2.8, 37.3, 20.0, 120.0),
         ]]);
@@ -129,7 +83,7 @@ describe('os acessos de conveniência', function () {
     });
 
     it('deviceEventCount devolve 0 para código ausente, não null', function () {
-        $dataset = datasetFromArrays(['deviceEventCounts' => ['SET CHANGE REMINDER' => 3]]);
+        $dataset = makePatternDataset(['deviceEventCounts' => ['SET CHANGE REMINDER' => 3]]);
 
         expect($dataset->deviceEventCount('SET CHANGE REMINDER'))->toBe(3);
         // Zero e não null: uma regra que somasse `null` viraria erro de tipo
@@ -145,7 +99,7 @@ describe('a média de insulina automática', function () {
     // dado — tratá-lo como 0 U rebaixaria a média e faria a queda do 22/07
     // parecer menor do que foi.
     it('divide pelos dias com registro, não pelos dias do calendário', function () {
-        $dataset = datasetFromArrays(['autoInsulinByDate' => [
+        $dataset = makePatternDataset(['autoInsulinByDate' => [
             '2026-07-16' => 45.0,
             '2026-07-17' => 37.1,
             '2026-07-22' => 9.0,
@@ -156,7 +110,7 @@ describe('a média de insulina automática', function () {
 
     it('devolve null sem nenhum registro, não zero', function () {
         // Zero afirmaria "não houve insulina automática". Null diz "não sei".
-        expect(datasetFromArrays()->meanAutoInsulin())->toBeNull();
+        expect(makePatternDataset()->meanAutoInsulin())->toBeNull();
     });
 });
 
@@ -194,7 +148,7 @@ describe('refeição em forma pura', function () {
 });
 
 it('o par de calibração guarda a janela usada', function () {
-    $dataset = datasetFromArrays([
+    $dataset = makePatternDataset([
         'calibrationPairs' => [new CalibrationPair(
             new DateTimeImmutable('2026-07-28 21:14:02'), 122, 130, 2.0,
         )],
@@ -206,7 +160,7 @@ it('o par de calibração guarda a janela usada', function () {
 });
 
 it('sinaliza métrica de versão antiga em vez de esconder (§D9)', function () {
-    $dataset = datasetFromArrays(['hasStaleMetrics' => true, 'metricsVersion' => '2026.08.1']);
+    $dataset = makePatternDataset(['hasStaleMetrics' => true, 'metricsVersion' => '2026.08.1']);
 
     expect($dataset->hasStaleMetrics)->toBeTrue();
     expect($dataset->metricsVersion)->toBe('2026.08.1');

@@ -17,7 +17,7 @@ use App\Domain\Import\LocaleNormalizer;
  * inexistente entra no banco parecendo legítima.
  */
 beforeEach(function () {
-    $this->n = new LocaleNormalizer();
+    $this->n = new LocaleNormalizer;
 });
 
 describe('cell()', function () {

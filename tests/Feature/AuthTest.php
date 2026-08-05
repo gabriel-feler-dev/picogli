@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Domain\Import\BolusLinker;
+use App\Domain\Import\CarelinkCsvReader;
+use App\Domain\Import\EventExploder;
+use App\Domain\Import\Persistence\MealEnricher;
+use App\Domain\Import\SettingsInferrer;
 use App\Jobs\ImportCsvJob;
 use App\Models\Import;
 use App\Models\SensorReading;
@@ -92,11 +97,11 @@ describe('isolamento entre usuários — o teste que mais importa', function () 
 
         // Só o OUTRO usuário importa.
         (new ImportCsvJob($outro->id, requireReferenceExport(), 'America/Sao_Paulo'))->handle(
-            app(App\Domain\Import\CarelinkCsvReader::class),
-            app(App\Domain\Import\EventExploder::class),
-            app(App\Domain\Import\BolusLinker::class),
-            app(App\Domain\Import\Persistence\MealEnricher::class),
-            app(App\Domain\Import\SettingsInferrer::class),
+            app(CarelinkCsvReader::class),
+            app(EventExploder::class),
+            app(BolusLinker::class),
+            app(MealEnricher::class),
+            app(SettingsInferrer::class),
         );
 
         // O banco TEM dado — a contagem global seria diferente de zero.
