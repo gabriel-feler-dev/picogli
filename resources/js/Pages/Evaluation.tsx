@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 
 import { ClinicalFooter } from '@/Components/ClinicalFooter';
 import { FindingCard } from '@/Components/FindingCard';
+import { NarrativeBlock } from '@/Components/NarrativeBlock';
 import type { EvaluationPayload } from '@/types';
 
 /**
@@ -29,6 +30,7 @@ export default function Evaluation({
     rule_failures,
     is_stale,
     generated_at,
+    narrative,
 }: EvaluationPayload) {
     return (
         <>
@@ -97,6 +99,11 @@ export default function Evaluation({
                         </p>
                     </section>
                 )}
+
+                {/* ⚠️ ACIMA dos achados, e só quando existe. A narrativa
+                    enriquece a tela; não substitui nada. Sem ela, a página é
+                    exatamente a de ontem (Artigo I, §D3). */}
+                {narrative !== null && <NarrativeBlock narrative={narrative} />}
 
                 {findings.length > 0 && (
                     <section className="mt-8 space-y-4">

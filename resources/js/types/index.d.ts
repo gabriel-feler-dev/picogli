@@ -175,6 +175,17 @@ export interface RuleFailurePayload {
  * o que analisar") e relatório com zero achados ("nenhum padrão para apontar" —
  * boa notícia, §D10).
  */
+/**
+ * O texto escrito por IA. ⚠️ `null` é o estado NORMAL — sem ele a tela é
+ * exatamente a de ontem, com os dez achados (Artigo I, §D3).
+ */
+export interface NarrativePayload {
+    text: string;
+    /** Procedência: qual modelo escreveu e quando. */
+    model: string | null;
+    generated_at: string | null;
+}
+
 export interface EvaluationPayload {
     has_report: boolean;
     period: { from: string; to: string; label: string } | null;
@@ -191,4 +202,6 @@ export interface EvaluationPayload {
     /** §D9 — relatório gerado por versão anterior. Sinaliza, não recalcula. */
     is_stale: boolean;
     generated_at: string | null;
+    /** ⚠️ ENRIQUECIMENTO, nunca substituição. `null` é o estado normal. */
+    narrative: NarrativePayload | null;
 }

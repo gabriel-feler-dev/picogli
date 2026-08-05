@@ -47,6 +47,7 @@ final class EvaluationPresenter
                 'rule_failures' => [],
                 'is_stale' => false,
                 'generated_at' => null,
+                'narrative' => null,
             ];
         }
 
@@ -80,6 +81,18 @@ final class EvaluationPresenter
             // ⚠️ Sinaliza, não recalcula em silêncio (§D9).
             'is_stale' => $report->isStale(),
             'generated_at' => $report->generated_at?->format('d/m/Y H:i'),
+
+            // ⚠️ `null` é o estado NORMAL (§D3). A narrativa ENRIQUECE a tela;
+            // não substitui nada. Sem ela, a tela é exatamente a de ontem — e
+            // é isso que torna o Artigo I verdadeiro por construção, em vez
+            // de por disciplina.
+            'narrative' => $report->hasNarrative() ? [
+                'text' => (string) $report->narrative,
+                // Procedência: qual modelo escreveu e quando. É o que permite
+                // investigar um texto estranho sem começar por adivinhar.
+                'model' => $report->narrative_model,
+                'generated_at' => $report->narrative_generated_at?->format('d/m/Y H:i'),
+            ] : null,
         ];
     }
 
