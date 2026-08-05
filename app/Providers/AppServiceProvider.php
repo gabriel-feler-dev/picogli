@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Domain\Metrics\MetricsConfig;
+use App\Domain\Patterns\PatternsConfig;
 use App\Domain\Presentation\MetricTranslator;
 use Illuminate\Support\ServiceProvider;
 
@@ -26,6 +27,18 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(
             MetricTranslator::class,
             fn (): MetricTranslator => new MetricTranslator(config('clinical.targets')),
+        );
+
+        // ⚠️ Limiares do motor de padrões (Spec 004, §D4). A construção VALIDA
+        // que as dez regras têm todas as chaves que declaram exigir — então
+        // config incompleta explode aqui, ao inicializar, e não no meio de uma
+        // comparação onde `null >= 2.0` é `false` e a regra deixa de disparar
+        // em silêncio. Falha silenciosa é o modo de falha que importa num motor
+        // de detecção: as telas continuam funcionando e o relatório fica vazio,
+        // parecendo boa notícia.
+        $this->app->singleton(
+            PatternsConfig::class,
+            fn (): PatternsConfig => PatternsConfig::fromArray(config('patterns')),
         );
     }
 
