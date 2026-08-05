@@ -208,6 +208,62 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | R5 — Falha de sensor derrubando o loop fechado
+    |--------------------------------------------------------------------------
+    |
+    | ⚠️ **O achado que atravessa dois blocos do CSV** — a lacuna vem do bloco
+    | Sensor, a insulina automática do bloco `Aggregated Auto Insulin Data`.
+    | Nenhum relatório da Medtronic mostra essa conexão.
+    |
+    | A prosa alvo do PicoGli.md §8.2:
+    |
+    |   "Em 22/07 seu sensor ficou 22 horas fora do ar. Sem sensor, o SmartGuard
+    |    não funciona e a bomba volta ao modo manual — foi seu único dia com quase
+    |    nenhuma insulina automática, e você teve que compensar com bolus."
+    |
+    | ⚠️ O achado é sobre o EQUIPAMENTO, não sobre a pessoa. O texto explica o
+    | mecanismo e para ali: não diz que o sensor deveria ter sido trocado antes,
+    | não estima quanta insulina "faltou", não sugere nada. Inclusive porque o
+    | dado não sustentaria nenhuma dessas afirmações.
+    |
+    | A última frase reconhece o esforço em vez de cobrá-lo — quem passou o dia
+    | corrigindo com bolus manual trabalhou mais, não menos.
+    |
+    */
+
+    'r5' => [
+        'title' => 'Sensor fora do ar derrubou a insulina automática',
+
+        'prose' => 'Em :affected_date seu sensor ficou :gap_hours horas sem '
+            .'registrar (:gap_minutes minutos, de :gap_start a :gap_end). Sem '
+            .'leitura de sensor o SmartGuard não tem como decidir, e a bomba '
+            .'volta ao modo manual: naquele dia a insulina automática foi de '
+            .':auto_insulin_u U contra :period_mean_auto_insulin_u U de média no '
+            .'período — :drop_percent% menos. A parte automática do dia caiu para '
+            .':day_automatic_fraction_percent% do total, contra '
+            .':period_automatic_fraction_percent% no período. O resto veio de '
+            .'bolus, ou seja: naquele dia o ajuste que a bomba costuma fazer '
+            .'sozinha passou a ser feito à mão.',
+
+        'evidence' => [
+            'gap_minutes' => 'Duração da lacuna, em minutos',
+            'gap_hours' => 'Duração da lacuna, em horas',
+            'gap_start' => 'Início da lacuna',
+            'gap_end' => 'Fim da lacuna',
+            'affected_date' => 'Dia mais afetado pela lacuna',
+            'gap_minutes_on_date' => 'Minutos da lacuna nesse dia',
+            'auto_insulin_u' => 'Insulina automática no dia',
+            'period_mean_auto_insulin_u' => 'Média de insulina automática no período',
+            'drop_percent' => 'Queda em relação à média',
+            'day_automatic_fraction_percent' => 'Fração automática no dia',
+            'period_automatic_fraction_percent' => 'Fração automática no período',
+            'day_bolus_insulin_u' => 'Bolus no dia',
+            'day_coverage_percent' => 'Cobertura do sensor no dia',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | R10 — Qualidade do sensor
     |--------------------------------------------------------------------------
     |
