@@ -6,6 +6,7 @@ namespace App\Domain\Import\Persistence;
 
 use App\Models\Meal;
 use App\Models\SensorReading;
+use Illuminate\Support\Carbon;
 
 /**
  * Preenche a resposta glicêmica de cada refeição a partir das leituras de
@@ -137,7 +138,7 @@ final class MealEnricher
      * O custo é nulo: a janela de ±10 min contém no máximo ~5 leituras, já que
      * o CGM lê a cada 5 minutos.
      */
-    private function settledGlucose(int $userId, \Illuminate\Support\Carbon $at): ?int
+    private function settledGlucose(int $userId, Carbon $at): ?int
     {
         $candidates = SensorReading::query()
             ->where('user_id', $userId)

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Metrics;
 
-use App\Domain\Metrics\Value\GlucoseReading;
 use App\Domain\Metrics\Value\GlucoseSeries;
 use App\Domain\Metrics\Value\GlucoseStatistics;
 use App\Domain\Metrics\Value\RangeDistribution;

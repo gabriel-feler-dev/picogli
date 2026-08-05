@@ -58,6 +58,19 @@ final class PeriodReportWriter
                 'validity' => $dataset->validity->value,
 
                 'generated_at' => Carbon::now(),
+
+                // ⚠️⚠️ **REGERAR O RELATÓRIO ZERA A NARRATIVA** (Spec 005, §D8).
+                //
+                // Um texto escrito sobre a versão anterior das regras, exibido ao
+                // lado de achados recalculados, é **plausível e falso** — o pior
+                // tipo de erro deste projeto, porque nada denuncia.
+                //
+                // Zerar aqui, e não em quem gera, é o que torna a regra
+                // inescapável: não existe caminho que atualize os achados sem
+                // invalidar o texto que os descrevia.
+                'narrative' => null,
+                'narrative_model' => null,
+                'narrative_generated_at' => null,
             ],
         );
     }

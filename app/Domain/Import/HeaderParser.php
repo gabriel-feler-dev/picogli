@@ -58,7 +58,7 @@ final class HeaderParser
     ];
 
     public function __construct(
-        private readonly LocaleNormalizer $normalizer = new LocaleNormalizer(),
+        private readonly LocaleNormalizer $normalizer = new LocaleNormalizer,
     ) {}
 
     /**

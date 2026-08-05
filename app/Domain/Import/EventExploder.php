@@ -13,6 +13,7 @@ use App\Domain\Import\Value\Events\DailyAutoInsulinEvent;
 use App\Domain\Import\Value\Events\DeviceEvent;
 use App\Domain\Import\Value\Events\DeviceEventCategory;
 use App\Domain\Import\Value\Events\IgnoredReason;
+use App\Domain\Import\Value\Events\ImportEvent;
 use App\Domain\Import\Value\Events\MealEvent;
 use App\Domain\Import\Value\Events\SensorReadingEvent;
 use App\Domain\Import\Value\ExplosionResult;
@@ -55,7 +56,7 @@ final class EventExploder
         return ExplosionResult::ignored($this->classifyEmptyHanded($row));
     }
 
-    /** @return list<\App\Domain\Import\Value\Events\ImportEvent> */
+    /** @return list<ImportEvent> */
     private function fromSensorBlock(CsvRow $row, DateTimeImmutable $at): array
     {
         $events = [];
@@ -92,7 +93,7 @@ final class EventExploder
         return $events;
     }
 
-    /** @return list<\App\Domain\Import\Value\Events\ImportEvent> */
+    /** @return list<ImportEvent> */
     private function fromAutoInsulinBlock(CsvRow $row, DateTimeImmutable $at): array
     {
         $units = $row->num('Bolus Volume Delivered (U)');
@@ -109,7 +110,7 @@ final class EventExploder
         )];
     }
 
-    /** @return list<\App\Domain\Import\Value\Events\ImportEvent> */
+    /** @return list<ImportEvent> */
     private function fromPumpBlock(CsvRow $row, DateTimeImmutable $at): array
     {
         $events = [];

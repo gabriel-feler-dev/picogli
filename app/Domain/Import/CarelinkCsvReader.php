@@ -50,8 +50,8 @@ final class CarelinkCsvReader
     private const COLUMN_HEADER_FIRST_FIELD = 'Index';
 
     public function __construct(
-        private readonly LocaleNormalizer $normalizer = new LocaleNormalizer(),
-        private readonly HeaderParser $headerParser = new HeaderParser(),
+        private readonly LocaleNormalizer $normalizer = new LocaleNormalizer,
+        private readonly HeaderParser $headerParser = new HeaderParser,
     ) {}
 
     /**

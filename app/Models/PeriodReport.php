@@ -32,7 +32,17 @@ class PeriodReport extends Model
             'coverage_pct' => 'float',
             'span_days' => 'float',
             'generated_at' => 'datetime',
+            'narrative_generated_at' => 'datetime',
         ];
+    }
+
+    /**
+     * ⚠️ `null` é o estado NORMAL, não a exceção. Relatório sem narrativa é o
+     * relatório de hoje, e a tela já sabe renderizá-lo (§D3).
+     */
+    public function hasNarrative(): bool
+    {
+        return $this->narrative !== null && trim((string) $this->narrative) !== '';
     }
 
     /** Ver RecordsEventTime::localDate() — mesma armadilha SQLite/MySQL. */
