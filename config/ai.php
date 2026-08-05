@@ -17,6 +17,99 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Cadeia de modelos (§D4)
+    |--------------------------------------------------------------------------
+    |
+    | ⚠️ **Ordenada por QUALIDADE, não por número.** O caminho feliz é sempre o
+    | melhor modelo; a degradação é gradual.
+    |
+    | Trocar de modelo é seguro aqui, e isso não é acidente: como o modelo não
+    | calcula nada (Artigo I), cair para um modelo mais fraco degrada a
+    | **elegância do texto**, nunca a correção do dado. Foi o que permitiu
+    | aceitar uma cadeia de modelos gratuitos sem risco funcional.
+    |
+    | *Por quê três e não dez:* um usuário, uma narrativa por importação. Três
+    | cobrem o caso real com folga. Dez seria engenharia para um problema que
+    | não existe — e a lista é config, então crescer depois custa uma linha.
+    |
+    | ⚠️ Confira os nomes de modelo disponíveis no console antes de usar: o
+    | catálogo do nível gratuito muda, e um nome inválido devolve 404, que a
+    | cadeia classifica como `BadResponse` e não como limite.
+    |
+    */
+
+    'model_chain' => [
+        'gemini-2.5-flash',
+        'gemini-2.5-flash-lite',
+        'gemini-2.0-flash',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cooldown por TIPO de erro (§D4)
+    |--------------------------------------------------------------------------
+    |
+    | ⚠️ A API devolve **429 para os dois casos**, e eles têm escalas de tempo
+    | completamente diferentes. Tratar igual faz o sistema bater no modelo
+    | esgotado a cada requisição, o dia inteiro.
+    |
+    | `quota_exhausted` usa 6 h em vez de "até a virada do dia" por simplicidade
+    | deliberada: acertar a virada exigiria saber o fuso de faturamento do
+    | provedor, e errar por otimismo custa uma tentativa perdida — enquanto
+    | errar por pessimismo custa um dia de narrativa.
+    |
+    */
+
+    'cooldown_seconds' => [
+        'rate_limit_per_minute' => 60,
+        'quota_exhausted' => 21600,   // 6 h
+        'timeout' => 300,             // 5 min — pode ser congestionamento
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Guarda de número inventado (§D5)
+    |--------------------------------------------------------------------------
+    |
+    | ⚠️ Número na prosa sem procedência na evidência → a narrativa **inteira** é
+    | descartada e o fallback é usado. Uma prosa com um número inventado e nove
+    | corretos é pior que nenhuma prosa: o usuário não tem como saber qual é
+    | qual (Artigo III).
+    |
+    | `rounding_tolerance` aceita que o modelo escreva "cerca de 5 horas" para
+    | 4,6 h. É tolerância RELATIVA, então funciona igual para 4,6 e para 3.616.
+    |
+    | `exempt_numbers` são números de linguagem, não de dado: "um padrão", "as 24
+    | horas do dia", "faixa de 70 a 180". Sem a lista, a guarda vira ruído e
+    | alguém a desliga — que é o pior desfecho possível para um guarda.
+    |
+    */
+
+    'number_guard' => [
+        'rounding_tolerance' => 0.06,
+
+        'exempt_numbers' => [
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+            12, 24,          // horas do dia
+            70, 180, 250,    // limites da faixa-alvo, ditos em texto
+            54,              // limiar de hipoglicemia nível 2
+            100,             // "100% do tempo"
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Narrativa
+    |--------------------------------------------------------------------------
+    */
+
+    'narrative' => [
+        'max_words' => 350,
+        'prompt_path' => 'prompts/narrative.pt_BR.md',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | ALLOWLIST DO PAYLOAD — Artigo VII
     |--------------------------------------------------------------------------
     |
