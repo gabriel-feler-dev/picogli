@@ -141,8 +141,37 @@ describe('a classificação do erro', function () {
             expect(false)->toBeTrue('deveria ter lançado');
         } catch (ProviderUnavailable $e) {
             expect($e->failure)->toBe(ProviderFailure::Timeout);
+            expect($e->failure->deservesCooldown())->toBeTrue();
         }
     });
+
+    /**
+     * ⚠️⚠️ **`ConnectionException` NÃO é sinônimo de timeout**, e este projeto
+     * tropeçou nisso ao vivo em 05/08/2026.
+     *
+     * Um PHP sem bundle de certificados (`curl.cainfo` vazio) devolvia
+     * `cURL error 60`. A classe classificava como `Timeout`, e a cadeia punha os
+     * **três** modelos de castigo por cinco minutos. O sintoma virou "a IA está
+     * lenta" quando o defeito era uma linha faltando no `php.ini`.
+     *
+     * Erro de rede que não é timeout vira `Unknown`, que **não gera cooldown** —
+     * falha rápido nos três modelos e aparece como o que é.
+     */
+    it('falha de TLS, DNS ou conexão recusada NÃO vira timeout nem gera cooldown', function (string $mensagem) {
+        Http::fake(fn () => throw new ConnectionException($mensagem));
+
+        try {
+            gemini()->generate('m', 'p', geminiPayload());
+            expect(false)->toBeTrue('deveria ter lançado');
+        } catch (ProviderUnavailable $e) {
+            expect($e->failure)->toBe(ProviderFailure::Unknown);
+            expect($e->failure->deservesCooldown())->toBeFalse();
+        }
+    })->with([
+        ['cURL error 60: SSL certificate problem: unable to get local issuer certificate'],
+        ['cURL error 6: Could not resolve host: generativelanguage.googleapis.com'],
+        ['cURL error 7: Failed to connect: Connection refused'],
+    ]);
 
     it('500 é Unknown', function () {
         Http::fake(['*' => Http::response('erro interno', 500)]);

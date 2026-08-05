@@ -73,7 +73,11 @@ final class GeminiProvider implements Provider
                     ]],
                 ]);
         } catch (ConnectionException $exception) {
-            throw new ProviderUnavailable(ProviderFailure::Timeout, $model, $exception->getMessage());
+            throw new ProviderUnavailable(
+                $this->classifyConnectionError($exception->getMessage()),
+                $model,
+                $exception->getMessage(),
+            );
         } catch (Throwable $exception) {
             throw new ProviderUnavailable(ProviderFailure::Unknown, $model, $exception->getMessage());
         }
@@ -91,6 +95,31 @@ final class GeminiProvider implements Provider
             model: $model,
             generatedAt: new DateTimeImmutable,
         );
+    }
+
+    /**
+     * ⚠️ **`ConnectionException` NÃO é sinônimo de timeout.** Ela cobre também
+     * falha de TLS, DNS que não resolve e conexão recusada — e essas são
+     * problemas de **ambiente ou configuração nossa**, não do provedor.
+     *
+     * A distinção importa por causa do cooldown. Este projeto tropeçou nela ao
+     * vivo em 05/08/2026: um PHP sem bundle de certificados (`curl.cainfo`
+     * vazio) devolvia `cURL error 60`, a classe classificava como `Timeout`, e a
+     * cadeia punha os três modelos de castigo por cinco minutos. O sintoma virou
+     * "a IA está lenta" quando o defeito era **uma linha faltando no php.ini**.
+     *
+     * Erro de rede que não é timeout vira `Unknown`, que **não gera cooldown** —
+     * então ele falha rápido, nos três modelos, e aparece como o que é.
+     */
+    private function classifyConnectionError(string $message): ProviderFailure
+    {
+        $message = mb_strtolower($message);
+
+        $isTimeout = str_contains($message, 'timed out')
+            || str_contains($message, 'timeout')
+            || str_contains($message, 'error 28');
+
+        return $isTimeout ? ProviderFailure::Timeout : ProviderFailure::Unknown;
     }
 
     /**

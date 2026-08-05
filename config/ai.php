@@ -12,7 +12,23 @@ return [
 
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
-        'timeout_seconds' => 20,
+
+        /*
+        | ⚠️ **45 s, e o número foi medido, não chutado.**
+        |
+        | O primeiro valor foi 20 s, e ele derrubava o melhor modelo da cadeia:
+        | com o prompt real (dez achados, ~6 mil tokens) o `gemini-3.6-flash`
+        | passa dos 20 s, enquanto num prompt curto responde em 13 s. O efeito era
+        | perverso — a narrativa saía sempre do modelo MAIS FRACO, e nada
+        | denunciava, porque texto continuava saindo.
+        |
+        | ⚠️ **Tensão com o ADR-5:** em produção a fila roda por cron com
+        | `--stop-when-empty --max-time=55`. Uma geração lenta consome quase o
+        | ciclo inteiro do worker. É aceitável porque `GenerateNarrativeJob` é o
+        | ÚLTIMO passo da cadeia e é enriquecimento: se ele não couber no ciclo,
+        | os achados já estão persistidos e a tela funciona.
+        */
+        'timeout_seconds' => 45,
     ],
 
     /*
@@ -32,16 +48,25 @@ return [
     | cobrem o caso real com folga. Dez seria engenharia para um problema que
     | não existe — e a lista é config, então crescer depois custa uma linha.
     |
-    | ⚠️ Confira os nomes de modelo disponíveis no console antes de usar: o
-    | catálogo do nível gratuito muda, e um nome inválido devolve 404, que a
-    | cadeia classifica como `BadResponse` e não como limite.
+    | ⚠️ **Nomes PINADOS, nunca aliases.** A API oferece `gemini-flash-latest` e
+    | `gemini-flash-lite-latest`, que apontam sempre para o modelo mais recente.
+    | São tentadores e estão errados aqui: o alias muda o modelo debaixo do
+    | projeto sem mudar nada versionado, e a narrativa deixa de ser reproduzível.
+    |
+    | É a mesma disciplina de `PatternEngine::VERSION` e
+    | `DailyMetricsWriter::VERSION` — se o que produz o texto muda, isso precisa
+    | ser uma alteração visível, não um efeito de calendário.
+    |
+    | ⚠️ Nomes conferidos contra `GET /v1beta/models` em 05/08/2026. Um nome
+    | inválido devolve 404, que a cadeia classifica como `BadResponse` (e não
+    | como limite) justamente para o defeito aparecer como defeito.
     |
     */
 
     'model_chain' => [
-        'gemini-2.5-flash',
-        'gemini-2.5-flash-lite',
-        'gemini-2.0-flash',
+        'gemini-3.6-flash',
+        'gemini-3.5-flash',
+        'gemini-3.1-flash-lite',
     ],
 
     /*
