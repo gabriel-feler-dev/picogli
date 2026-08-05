@@ -208,6 +208,76 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | R6 — Coerência entre configuração e resultado
+    |--------------------------------------------------------------------------
+    |
+    | ⚠️⚠️ **O TEXTO MAIS DELICADO DO PROJETO.** É a regra que mais se aproxima de
+    | conduta médica, e a fronteira do Artigo VI passa exatamente aqui.
+    |
+    | A prosa alvo do PicoGli.md §8.2 mostra o limite com precisão:
+    |
+    |   "Sua bomba está configurada para dar progressivamente menos insulina por
+    |    grama de carboidrato ao longo do dia (1 U para 5 g de manhã, 1 U para
+    |    8 g à noite), e é justamente à tarde e à noite que sua glicose fica mais
+    |    alta. Pode haver motivo clínico para isso — é uma boa pergunta para
+    |    levar ao seu endocrinologista."
+    |
+    | Repare no que ela faz e no que não faz:
+    |
+    |   ✅ descreve a configuração OBSERVADA, com os números do próprio aparelho
+    |   ✅ descreve o resultado OBSERVADO, no mesmo horário
+    |   ✅ admite que pode haver motivo clínico — porque pode, e o app não sabe
+    |   ✅ termina devolvendo a pergunta a quem pode respondê-la
+    |   ❌ NÃO propõe valor novo de CR
+    |   ❌ NÃO diz que a configuração está errada
+    |   ❌ NÃO afirma que uma coisa causa a outra
+    |
+    | ⚠️ **"Razão mais fraca" é contraintuitivo e precisa ser explicado.** Razão de
+    | carboidrato é gramas por unidade: 8 g/U dá MENOS insulina que 5 g/U. Sem
+    | essa frase, o número maior parece "mais".
+    |
+    | ⚠️ **Nuance obrigatória:** o período de CR mais fraco é a noite, mas o de
+    | MAIS tempo alto é a tarde. A prosa compara os extremos de CR e cita o tempo
+    | alto de cada um — nunca diz "é à noite que sua glicose fica mais alta",
+    | porque seria falso.
+    |
+    */
+
+    'r6' => [
+        'title' => 'A configuração da bomba muda ao longo do dia, e o resultado também',
+
+        'prose' => 'Sua bomba está configurada para dar quantidades diferentes de '
+            .'insulina por grama de carboidrato conforme o horário: no período '
+            .'da :strongest_daypart_label, 1 unidade para cada '
+            .':strongest_carb_ratio g (:strongest_meals refeições registradas); '
+            .'no da :weakest_daypart_label, 1 unidade para cada '
+            .':weakest_carb_ratio g (:weakest_meals refeições). Como a conta é '
+            .'por grama, o número maior significa MENOS insulina para a mesma '
+            .'refeição. No mesmo período em que a bomba dá menos insulina por '
+            .'grama, sua glicose fica acima da faixa '
+            .':weakest_percent_above% do tempo, contra '
+            .':strongest_percent_above% no outro. '
+            .'Pode haver motivo clínico para a configuração ser assim, e este '
+            .'app não tem como saber qual — mas é uma boa pergunta para levar ao '
+            .'seu endocrinologista.',
+
+        'evidence' => [
+            'strongest_daypart' => 'Período com mais insulina por grama',
+            'strongest_carb_ratio' => 'Gramas por unidade nesse período',
+            'strongest_meals' => 'Refeições registradas nesse período',
+            'strongest_percent_above' => 'Tempo acima da faixa nesse período',
+            'weakest_daypart' => 'Período com menos insulina por grama',
+            'weakest_carb_ratio' => 'Gramas por unidade nesse período',
+            'weakest_meals' => 'Refeições registradas nesse período',
+            'weakest_percent_above' => 'Tempo acima da faixa nesse período',
+            'ratio_spread_g' => 'Diferença entre os dois',
+            'percent_above_difference_pp' => 'Diferença de tempo acima da faixa',
+            'dayparts_compared' => 'Períodos comparados',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | R5 — Falha de sensor derrubando o loop fechado
     |--------------------------------------------------------------------------
     |
