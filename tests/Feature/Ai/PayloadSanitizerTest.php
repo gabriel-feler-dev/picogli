@@ -256,6 +256,17 @@ it('o sanitizer é a única porta de saída', function () {
             continue;
         }
 
+        // ⚠️ **A exceção declarada, e é UMA.** O `GeminiProvider` é o único lugar
+        // do projeto que fala com o provedor — é o que a arquitetura promete, e é
+        // por isso que ele fica em `Infrastructure/`, fora do domínio puro.
+        //
+        // Que ele seja o ÚNICO está verificado noutro lugar, por um teste que
+        // afirma o contrário deste: `GeminiProviderTest` → "só o GeminiProvider
+        // conhece o endpoint". Os dois juntos fecham o cerco pelos dois lados.
+        if (str_ends_with($caminho, 'Infrastructure/Ai/GeminiProvider.php')) {
+            continue;
+        }
+
         $codigo = file_get_contents($arquivo->getPathname());
 
         foreach (['generativelanguage', 'googleapis.com', 'v1beta/models'] as $marca) {

@@ -4,9 +4,11 @@ namespace App\Providers;
 
 use App\Domain\Ai\CooldownStore;
 use App\Domain\Ai\ModelChain;
+use App\Domain\Ai\NarrativeGenerator;
 use App\Domain\Ai\NumberGuard;
 use App\Domain\Ai\PayloadSanitizer;
 use App\Domain\Ai\PromptBuilder;
+use App\Domain\Ai\Provider;
 use App\Domain\Metrics\MetricsConfig;
 use App\Domain\Patterns\DaypartAggregator;
 use App\Domain\Patterns\PatternEngine;
@@ -17,6 +19,8 @@ use App\Domain\Presentation\LangProseRenderer;
 use App\Domain\Presentation\MetricTranslator;
 use App\Infrastructure\Ai\CacheCooldownStore;
 use App\Infrastructure\Ai\FilePromptBuilder;
+use App\Infrastructure\Ai\GeminiProvider;
+use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -128,6 +132,34 @@ class AppServiceProvider extends ServiceProvider
                 resource_path(config('ai.narrative.prompt_path')),
                 config('tone.forbidden_vocabulary'),
                 config('tone.forbidden_conduct'),
+            ),
+        );
+
+        // ⚠️ O ÚNICO lugar do projeto que fala com um provedor de IA. A chave
+        // pode ser `null`: sem ela o provider classifica como `Unauthorized`,
+        // a cadeia devolve `null` e a tela cai para o fallback (Artigo I).
+        // Nada quebra por falta de chave — é a propriedade que T408 verifica.
+        $this->app->singleton(
+            Provider::class,
+            fn (): Provider => new GeminiProvider(
+                $this->app->make(HttpFactory::class),
+                config('ai.gemini.api_key'),
+                (int) config('ai.gemini.timeout_seconds'),
+            ),
+        );
+
+        // O orquestrador: sanitiza (VII), monta o prompt, percorre a cadeia
+        // (§D4) e confronta os números (§D5). Nunca lança — devolve um
+        // `NarrativeAttempt` com a razão do descarte, e quem loga é a borda.
+        $this->app->singleton(
+            NarrativeGenerator::class,
+            fn (): NarrativeGenerator => new NarrativeGenerator(
+                $this->app->make(PayloadSanitizer::class),
+                $this->app->make(PromptBuilder::class),
+                $this->app->make(ModelChain::class),
+                $this->app->make(Provider::class),
+                $this->app->make(NumberGuard::class),
+                (int) config('ai.narrative.max_words'),
             ),
         );
 
