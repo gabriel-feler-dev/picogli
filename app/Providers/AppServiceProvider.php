@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Domain\Metrics\MetricsConfig;
 use App\Domain\Patterns\DaypartAggregator;
+use App\Domain\Patterns\PatternEngine;
 use App\Domain\Patterns\PatternsConfig;
 use App\Domain\Patterns\ProseRenderer;
+use App\Domain\Patterns\Rules;
 use App\Domain\Presentation\LangProseRenderer;
 use App\Domain\Presentation\MetricTranslator;
 use Illuminate\Support\ServiceProvider;
@@ -62,6 +64,26 @@ class AppServiceProvider extends ServiceProvider
         // nascer com a prosa pronta (Artigo I) e não pode chamar `__()` (pureza).
         // A regra recebe a interface; quem lê `lang/` é esta implementação.
         $this->app->bind(ProseRenderer::class, LangProseRenderer::class);
+
+        // ⚠️ As dez regras registradas num lugar só. A ORDEM AQUI NÃO IMPORTA
+        // para o usuário: o motor ordena por (severidade, rank), e o rank vem do
+        // enum `RuleId`. Estão em ordem numérica por legibilidade, e há teste
+        // provando que embaralhá-las não muda a saída.
+        $this->app->singleton(
+            PatternEngine::class,
+            fn (): PatternEngine => new PatternEngine([
+                $this->app->make(Rules\R1DaypartDrift::class),
+                $this->app->make(Rules\R2HypoCluster::class),
+                $this->app->make(Rules\R3Rollercoaster::class),
+                $this->app->make(Rules\R4OutlierDay::class),
+                $this->app->make(Rules\R5SensorGapLoopImpact::class),
+                $this->app->make(Rules\R6CarbRatioCoherence::class),
+                $this->app->make(Rules\R7SensorAdherence::class),
+                $this->app->make(Rules\R8ReservoirChanges::class),
+                $this->app->make(Rules\R9CalibrationBurden::class),
+                $this->app->make(Rules\R10SensorQuality::class),
+            ]),
+        );
     }
 
     /**

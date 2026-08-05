@@ -154,6 +154,61 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | R3 — Montanha-russa (hipo → sobrecorreção → hiper)
+    |--------------------------------------------------------------------------
+    |
+    | ⚠️⚠️ **O EXEMPLO CANÔNICO DO ARTIGO IV.** A constituição usa este achado
+    | para mostrar a diferença entre descrever mecanismo e julgar caráter:
+    |
+    |   ❌ "Você comeu 109 g de carboidrato depois de uma hipoglicemia."
+    |   ✅ "Quedas de glicose disparam fome intensa — é reação fisiológica do
+    |      corpo, não falta de controle. Aconteceu 1 vez em 14 dias e custou
+    |      4 horas em glicose alta."
+    |
+    | As duas frases carregam O MESMO NÚMERO. A primeira faz alguém desinstalar
+    | o app; a segunda explica um mecanismo que a pessoa reconhece em si.
+    |
+    | Por isso o texto abaixo **começa pelo mecanismo**, antes de qualquer
+    | número. A ordem das frases é parte do requisito: quem lê "109 g" primeiro
+    | já se sentiu cobrado antes de chegar à explicação.
+    |
+    | ⚠️ A última frase existe para fechar a leitura: aconteceu UMA vez em 14
+    | dias. Sem ela, o achado descreve um episódio e deixa a impressão de rotina.
+    |
+    */
+
+    'r3' => [
+        'title' => 'Uma queda de glicose puxou o dia para cima',
+
+        'prose' => 'Queda de glicose dispara fome intensa — é reação fisiológica '
+            .'do corpo pedindo açúcar rápido, e não uma questão de controle. Em '
+            .':date sua glicose chegou a :nadir às :nadir_at, e nas horas '
+            .'seguintes foram :carbs_g g de carboidrato em :meals refeições '
+            .'(entre :first_meal_at e :last_meal_at). Às :hyper_start_at a '
+            .'glicose passou de 250 e ficou acima disso por '
+            .':hyper_duration_hours horas, chegando a :hyper_peak. É o ciclo que '
+            .'costuma se repetir depois de uma queda, e conhecê-lo é o que '
+            .'permite interromper: no período todo, isso aconteceu uma vez.',
+
+        'evidence' => [
+            'date' => 'Dia do evento',
+            'nadir' => 'Valor mais baixo atingido',
+            'nadir_at' => 'Horário do valor mais baixo',
+            'hypo_duration_minutes' => 'Duração da queda',
+            'meals' => 'Refeições na janela',
+            'carbs_g' => 'Carboidrato total na janela',
+            'first_meal_at' => 'Primeira refeição',
+            'last_meal_at' => 'Última refeição',
+            'hyper_start_at' => 'Início da glicose acima de 250',
+            'hyper_duration_minutes' => 'Duração acima de 250, em minutos',
+            'hyper_duration_hours' => 'Duração acima de 250, em horas',
+            'hyper_peak' => 'Pico atingido',
+            'minutes_from_nadir_to_hyper' => 'Tempo entre o fundo e a subida',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | R4 — Dia outlier (concentração de Pareto)
     |--------------------------------------------------------------------------
     |
