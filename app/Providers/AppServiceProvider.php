@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Domain\Metrics\MetricsConfig;
+use App\Domain\Patterns\DaypartAggregator;
 use App\Domain\Patterns\PatternsConfig;
 use App\Domain\Presentation\MetricTranslator;
 use Illuminate\Support\ServiceProvider;
@@ -39,6 +40,20 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(
             PatternsConfig::class,
             fn (): PatternsConfig => PatternsConfig::fromArray(config('patterns')),
+        );
+
+        // ⚠️ Os limites dos períodos do dia vêm de `clinical.dayparts`, não de
+        // `patterns`. A divisão é deliberada: clinical = o que as coisas
+        // significam; patterns = quando uma regra dispara. Se "tarde" morasse no
+        // arquivo de limiares, o dashboard e o motor poderiam discordar sobre o
+        // que é tarde — e a agregação VALIDA que os quatro períodos cobrem as
+        // 24 h sem sobreposição.
+        $this->app->singleton(
+            DaypartAggregator::class,
+            fn (): DaypartAggregator => new DaypartAggregator(
+                $this->app->make(MetricsConfig::class),
+                config('clinical.dayparts'),
+            ),
         );
     }
 
