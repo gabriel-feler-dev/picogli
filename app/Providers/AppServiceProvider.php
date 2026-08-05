@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Domain\Ai\CooldownStore;
 use App\Domain\Ai\ModelChain;
+use App\Domain\Ai\NumberGuard;
 use App\Domain\Ai\PayloadSanitizer;
 use App\Domain\Metrics\MetricsConfig;
 use App\Domain\Patterns\DaypartAggregator;
@@ -97,6 +98,20 @@ class AppServiceProvider extends ServiceProvider
                 config('ai.model_chain'),
                 config('ai.cooldown_seconds'),
                 $this->app->make(CooldownStore::class),
+            ),
+        );
+
+        // ⚠️ A guarda de número inventado (§D5). Tolerância e isenções
+        // chegam injetadas — o domínio não chama `config()`.
+        //
+        // Ela só é aplicável porque o `fallbackProse` da fase 4 é
+        // publicável: descartar a narrativa devolve a tela ao estado de
+        // ontem, não a um estado pior.
+        $this->app->singleton(
+            NumberGuard::class,
+            fn (): NumberGuard => new NumberGuard(
+                (float) config('ai.number_guard.rounding_tolerance'),
+                config('ai.number_guard.exempt_numbers'),
             ),
         );
 
