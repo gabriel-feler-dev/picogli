@@ -242,11 +242,23 @@ return [
         | reproduzível. Duas janelas diferentes dão dois erros médios, e ambos
         | estão certos.
         |
+        | `expected_error_percent` decide entre duas prosas: a que contextualiza
+        | o erro como esperado e a que diz que está acima. **Nenhuma das duas
+        | recomenda trocar sensor ou recalibrar** — isso seria conduta sobre
+        | equipamento médico (Artigo VI).
+        |
+        | ⚠️ 15% é PARÂMETRO DE PRODUTO, não limiar clínico. O MARD publicado do
+        | Guardian Sensor 3 fica em torno de 10–11%, e o export de referência dá
+        | 10,68%. A margem até 15% absorve o ruído do próprio pareamento: uma
+        | calibração feita durante variação rápida de glicose produz erro alto
+        | sem que o sensor esteja pior.
+        |
         */
 
         'r10' => [
             'pairing_minutes' => 10,
             'min_pairs' => 10,
+            'expected_error_percent' => 15.0,
         ],
 
     ],

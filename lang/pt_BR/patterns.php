@@ -98,6 +98,161 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | R2 — Cluster de hipoglicemias
+    |--------------------------------------------------------------------------
+    |
+    | A prosa alvo do PicoGli.md §8.2:
+    |
+    |   "Suas quedas não são aleatórias: acontecem em dois horários — antes do
+    |    jantar e de madrugada. Isso é um padrão, e padrões têm causa
+    |    identificável."
+    |
+    | ⚠️ Note o que ela NÃO faz: não sugere reduzir basal, não estima dose, não
+    | afirma a causa. Diz que existe padrão e que padrão tem causa — verdadeiro,
+    | útil, e devolve a investigação a quem pode fazê-la (Artigo VI).
+    |
+    | ⚠️ `:episodes_outside` aparece no texto de propósito. Com 4 de 5 episódios
+    | agrupados, dizer só "80%" deixaria o leitor supondo que todos se encaixam.
+    | O que ficou fora faz parte do achado.
+    |
+    */
+
+    'r2' => [
+        'title' => 'Suas quedas de glicose se concentram em horários',
+
+        'prose' => 'Das :episodes_total quedas abaixo de 70 no período, '
+            .':episodes_clustered acontecem em dois horários: por volta de '
+            .':window1_start e por volta de :window2_start. '
+            .'Queda que se repete em horário parecido tende a ter causa '
+            .'identificável — é diferente de uma queda isolada. '
+            .'(:episodes_outside ficaram fora desses dois horários.)',
+
+        'prose_single_window' => 'Das :episodes_total quedas abaixo de 70 no '
+            .'período, :episodes_clustered acontecem por volta de '
+            .':window1_start. Queda que se repete em horário parecido tende a '
+            .'ter causa identificável — é diferente de uma queda isolada. '
+            .'(:episodes_outside ficaram fora desse horário.)',
+
+        'evidence' => [
+            'episodes_total' => 'Episódios de hipoglicemia no período',
+            'episodes_clustered' => 'Episódios dentro das janelas',
+            'episodes_outside' => 'Episódios fora das janelas',
+            'windows_used' => 'Janelas identificadas',
+            'window_hours' => 'Largura da janela, em horas',
+            'concentration_percent' => 'Concentração nas janelas',
+            'worst_nadir' => 'Menor valor atingido',
+            'window1_start' => 'Início da primeira janela',
+            'window1_end' => 'Fim da primeira janela',
+            'window1_episodes' => 'Episódios na primeira janela',
+            'window1_nadir' => 'Menor valor na primeira janela',
+            'window2_start' => 'Início da segunda janela',
+            'window2_end' => 'Fim da segunda janela',
+            'window2_episodes' => 'Episódios na segunda janela',
+            'window2_nadir' => 'Menor valor na segunda janela',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | R4 — Dia outlier (concentração de Pareto)
+    |--------------------------------------------------------------------------
+    |
+    | ⚠️ **A regra mais valiosa do conjunto, e a razão é o tom.** Ela inverte a
+    | leitura que a pessoa faz de si mesma: "1,9% do tempo acima de 250" parece
+    | um problema crônico e difuso. A verdade é que foram dois dias, e um deles
+    | responde por 71% — nos outros doze, zero minutos.
+    |
+    | É o oposto de acusatório sem precisar de nenhum eufemismo. Só de medir a
+    | coisa certa.
+    |
+    | A prosa alvo do PicoGli.md §8.2:
+    |
+    |   "Seu 'tempo em glicose muito alta' parece um problema constante, mas não
+    |    é: 72% dele veio de um único dia. Nos outros 13 dias você ficou
+    |    praticamente sempre abaixo de 250."
+    |
+    | Duas prosas porque as duas métricas pedem enquadramentos diferentes:
+    | glicose muito alta é evento, hipoglicemia é risco.
+    |
+    */
+
+    'r4' => [
+        'title' => 'Um único dia responde pela maior parte',
+
+        'prose_above_250' => 'O tempo com glicose acima de 250 parece constante, '
+            .'mas não é: de :total_minutes minutos no período, '
+            .':dominant_minutes vieram de um único dia, :dominant_date — '
+            .':contribution_percent% do total. Nos outros :clean_days dias com '
+            .'leitura você não passou nenhum minuto acima de 250. Um evento '
+            .'isolado e um problema constante pedem leituras diferentes.',
+
+        'prose_below_70' => 'O tempo com glicose abaixo de 70 se concentra em um '
+            .'dia: de :total_minutes minutos no período, :dominant_minutes '
+            .'vieram de :dominant_date — :contribution_percent% do total. '
+            .'Em :clean_days dos :days_total dias não houve nenhuma leitura '
+            .'abaixo de 70.',
+
+        'evidence' => [
+            'metric' => 'Métrica avaliada',
+            'dominant_date' => 'Dia com maior contribuição',
+            'dominant_readings' => 'Leituras no dia dominante',
+            'dominant_minutes' => 'Minutos no dia dominante',
+            'total_readings' => 'Leituras no período',
+            'total_minutes' => 'Minutos no período',
+            'contribution_percent' => 'Contribuição do dia dominante',
+            'days_total' => 'Dias com leitura',
+            'days_affected' => 'Dias com alguma ocorrência',
+            'clean_days' => 'Dias sem nenhuma ocorrência',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | R10 — Qualidade do sensor
+    |--------------------------------------------------------------------------
+    |
+    | ⚠️ A JANELA DE PAREAMENTO APARECE NO TEXTO. Duas janelas diferentes
+    | produzem dois erros médios, e os dois estão certos — o que os distingue é
+    | a janela. Sem ela, "10,7%" não é reproduzível.
+    |
+    | ⚠️ Nenhuma das duas prosas recomenda trocar sensor, recalibrar ou procurar
+    | suporte. Isso seria conduta sobre equipamento médico (Artigo VI). A regra
+    | relata e para.
+    |
+    */
+
+    'r10' => [
+        'title' => 'Quanto o sensor difere da glicemia capilar',
+
+        'prose' => 'Comparando cada calibração capilar com a leitura do sensor '
+            .'mais próxima (dentro de :window_minutes minutos), a diferença '
+            .'média foi de :mean_error_percent% em :pairs comparações. Isso está '
+            .'dentro do que se espera de um sensor como o Guardian 3, que '
+            .'trabalha com uma margem em relação à glicemia de dedo — as duas '
+            .'medidas não são a mesma coisa e não precisam coincidir.',
+
+        'prose_above_expected' => 'Comparando cada calibração capilar com a '
+            .'leitura do sensor mais próxima (dentro de :window_minutes '
+            .'minutos), a diferença média foi de :mean_error_percent% em '
+            .':pairs comparações — acima da margem de :expected_error_percent% '
+            .'que se costuma esperar. Vale saber que calibração feita durante '
+            .'variação rápida de glicose aumenta essa diferença sem que o sensor '
+            .'esteja pior.',
+
+        'evidence' => [
+            'pairs' => 'Comparações pareadas',
+            'window_minutes' => 'Janela de pareamento',
+            'mean_error_percent' => 'Diferença média',
+            'median_error_percent' => 'Diferença mediana',
+            'max_error_percent' => 'Maior diferença',
+            'mean_offset_minutes' => 'Distância média entre as medidas',
+            'expected_error_percent' => 'Margem esperada',
+            'pairs_sensor_higher' => 'Comparações em que o sensor leu mais alto',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | R7 — Aderência ao uso do sensor
     |--------------------------------------------------------------------------
     |

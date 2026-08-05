@@ -133,7 +133,7 @@ enum RuleId: string
             self::SensorAdherence => ['coverage_threshold'],
             self::ReservoirChanges => ['min_rewinds'],
             self::CalibrationBurden => ['min_calibrations'],
-            self::SensorQuality => ['pairing_minutes', 'min_pairs'],
+            self::SensorQuality => ['pairing_minutes', 'min_pairs', 'expected_error_percent'],
         };
     }
 
