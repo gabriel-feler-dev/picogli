@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Domain\Ai\CooldownStore;
+use App\Domain\Ai\ModelChain;
 use App\Domain\Ai\PayloadSanitizer;
 use App\Domain\Metrics\MetricsConfig;
 use App\Domain\Patterns\DaypartAggregator;
@@ -11,6 +13,7 @@ use App\Domain\Patterns\ProseRenderer;
 use App\Domain\Patterns\Rules;
 use App\Domain\Presentation\LangProseRenderer;
 use App\Domain\Presentation\MetricTranslator;
+use App\Infrastructure\Ai\CacheCooldownStore;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -75,6 +78,26 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(
             PayloadSanitizer::class,
             fn (): PayloadSanitizer => new PayloadSanitizer(config('ai.payload_allowlist')),
+        );
+
+        // ⚠️ O cooldown é PERSISTIDO: na hospedagem compartilhada a fila roda
+        // por cron com `--stop-when-empty` (ADR-5), e o processo morre entre
+        // execuções. Em memória, o sistema reaprenderia que o modelo está
+        // esgotado a cada chamada — gastando uma requisição por vez para
+        // descobrir o que já sabia.
+        $this->app->bind(CooldownStore::class, CacheCooldownStore::class);
+
+        // ⚠️ A cadeia percorre SEMPRE do melhor modelo, saltando os de
+        // castigo. Não guarda "onde parou": um cursor que descesse e ficasse
+        // embaixo continuaria usando o modelo mais fraco depois de o melhor
+        // ter voltado — e ninguém notaria, porque o texto continuaria saindo.
+        $this->app->singleton(
+            ModelChain::class,
+            fn (): ModelChain => new ModelChain(
+                config('ai.model_chain'),
+                config('ai.cooldown_seconds'),
+                $this->app->make(CooldownStore::class),
+            ),
         );
 
         // ⚠️ As dez regras registradas num lugar só. A ORDEM AQUI NÃO IMPORTA
