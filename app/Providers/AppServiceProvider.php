@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Domain\Ai\Chat\EmergencyClassifier;
 use App\Domain\Ai\CooldownStore;
 use App\Domain\Ai\ModelChain;
 use App\Domain\Ai\NarrativeGenerator;
@@ -118,6 +119,30 @@ class AppServiceProvider extends ServiceProvider
             fn (): NumberGuard => new NumberGuard(
                 (float) config('ai.number_guard.rounding_tolerance'),
                 config('ai.number_guard.exempt_numbers'),
+            ),
+        );
+
+        // ⚠️⚠️ Artigo VI, camada 4 (Spec 006, §D4) — a ÚNICA camada da fronteira
+        // clínica que roda ANTES do modelo. As outras quatro são instrução,
+        // prosa ou interface; esta é um `if`.
+        //
+        // Registrada aqui na PRIMEIRA tarefa da fase, antes de existir
+        // orquestrador — mesma razão do `PayloadSanitizer` na fase 5: guarda
+        // depois da porta deixa uma janela, e é na janela que se testa com
+        // perguntas reais.
+        //
+        // ⚠️ As listas vêm de `config/tone.php` (configuração de guarda); o
+        // TEXTO vem de `lang/` (prosa voltada ao usuário, e por isso varrida
+        // pelo teste do Artigo IV). O domínio não chama `config()` nem `__()`.
+        $this->app->singleton(
+            EmergencyClassifier::class,
+            fn (): EmergencyClassifier => new EmergencyClassifier(
+                config('tone.emergency.risk_terms'),
+                config('tone.emergency.presence_markers'),
+                config('tone.emergency.standalone_terms'),
+                (int) config('tone.emergency.critical_low'),
+                (int) config('tone.emergency.critical_high'),
+                (string) __('chat.emergency_guidance'),
             ),
         );
 
