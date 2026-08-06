@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use App\Domain\Ai\Chat\ArgumentValidator;
 use App\Domain\Ai\Chat\EmergencyClassifier;
+use App\Domain\Ai\Chat\Persistence as Chat;
+use App\Domain\Ai\Chat\ToolRegistry;
 use App\Domain\Ai\CooldownStore;
 use App\Domain\Ai\ModelChain;
 use App\Domain\Ai\NarrativeGenerator;
@@ -186,6 +189,43 @@ class AppServiceProvider extends ServiceProvider
                 $this->app->make(NumberGuard::class),
                 (int) config('ai.narrative.max_words'),
             ),
+        );
+
+        /*
+         * ⚠️ As dez ferramentas do chat (Spec 006, §9.3).
+         *
+         * O modelo recebe ESTE catálogo, não os dados — o Artigo III virando
+         * arquitetura. E o `ToolRegistry` é o único caminho de execução: ele
+         * valida argumento (§D2) e confere a saída contra `emittedKeys` (§D7).
+         *
+         * ⚠️ A ordem aqui não importa para o modelo; ele escolhe pela descrição.
+         * Estão agrupadas como nas tarefas T503–T505 por legibilidade.
+         */
+        $this->app->singleton(
+            ToolRegistry::class,
+            fn (): ToolRegistry => new ToolRegistry([
+                // T503 — métrica
+                $this->app->make(Chat\PeriodMetricsTool::class),
+                $this->app->make(Chat\HourlyProfileTool::class),
+                $this->app->make(Chat\DailySeriesTool::class),
+                $this->app->make(Chat\InsulinSummaryTool::class),
+                // T504 — evento e refeição
+                $this->app->make(Chat\EpisodesTool::class),
+                $this->app->make(Chat\SensorGapsTool::class),
+                $this->app->make(Chat\DeviceEventsTool::class),
+                $this->app->make(Chat\MealsTool::class),
+                // T505 — compostas
+                $this->app->make(Chat\ComparePeriodsTool::class),
+                $this->app->make(Chat\FindingsTool::class),
+            ], new ArgumentValidator),
+        );
+
+        // ⚠️ A evidência dos achados sai pela MESMA allowlist da fase 5. Uma
+        // segunda lista, paralela, divergiria no primeiro achado novo — e o
+        // Artigo VII passaria a ter duas respostas para "o que sai daqui?".
+        $this->app->singleton(
+            Chat\FindingsTool::class,
+            fn (): Chat\FindingsTool => new Chat\FindingsTool(config('ai.payload_allowlist')),
         );
 
         // ⚠️ As dez regras registradas num lugar só. A ORDEM AQUI NÃO IMPORTA
