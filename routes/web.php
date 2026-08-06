@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EvaluationController;
 use App\Http\Controllers\ImportController;
@@ -29,6 +30,23 @@ Route::middleware('auth')->group(function (): void {
 
     Route::get('/importar', [ImportController::class, 'index'])->name('imports.index');
     Route::post('/importar', [ImportController::class, 'store'])->name('imports.store');
+
+    /*
+     * Fase 6 — chat. O modelo consulta por ferramenta; nenhum dado vai no prompt.
+     *
+     * ⚠️ **Rate limit próprio** (§D12, §11.3), independente do cooldown da
+     * `ModelChain`. Os dois protegem coisas diferentes: o cooldown protege a
+     * COTA do provedor; este protege o produto. Um laço acidental no front
+     * consumiria as 1.500 requisições do dia antes de qualquer cooldown
+     * perceber que há algo errado.
+     */
+    Route::get('/conversar', [ChatController::class, 'index'])->name('chat.index');
+    Route::post('/conversar', [ChatController::class, 'store'])->name('chat.store');
+    Route::get('/conversar/{conversation}', [ChatController::class, 'show'])->name('chat.show');
+
+    Route::post('/conversar/{conversation}/mensagens', [ChatController::class, 'message'])
+        ->middleware('throttle:chat')
+        ->name('chat.message');
 });
 
 Route::get('/', fn () => redirect()->route(auth()->check() ? 'dashboard' : 'login'));

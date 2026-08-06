@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Domain\Ai\Chat\ArgumentValidator;
+use App\Domain\Ai\Chat\ChatOrchestrator;
 use App\Domain\Ai\Chat\ChatPromptBuilder;
+use App\Domain\Ai\Chat\ChatProvider;
 use App\Domain\Ai\Chat\EmergencyClassifier;
 use App\Domain\Ai\Chat\Persistence as Chat;
 use App\Domain\Ai\Chat\ToolRegistry;
@@ -26,7 +28,10 @@ use App\Infrastructure\Ai\CacheCooldownStore;
 use App\Infrastructure\Ai\FileChatPromptBuilder;
 use App\Infrastructure\Ai\FilePromptBuilder;
 use App\Infrastructure\Ai\GeminiProvider;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Client\Factory as HttpFactory;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -262,6 +267,33 @@ class AppServiceProvider extends ServiceProvider
             fn (): Chat\FindingsTool => new Chat\FindingsTool(config('ai.payload_allowlist')),
         );
 
+        /*
+         * ⚠️ O laço (Spec 006, T510). Recebe TUDO montado: o classificador que
+         * roda antes da rede, o registry que é o único caminho de execução de
+         * ferramenta, a porta do Artigo VII com a allowlist do chat, a cadeia de
+         * modelos da fase 5 e a guarda de número.
+         *
+         * ⚠️ **Nunca lança e nunca loga.** Devolve um `ChatTurn` com o desfecho;
+         * quem registra é o controller.
+         */
+        $this->app->singleton(
+            ChatOrchestrator::class,
+            fn (): ChatOrchestrator => new ChatOrchestrator(
+                $this->app->make(EmergencyClassifier::class),
+                $this->app->make(ToolRegistry::class),
+                $this->app->make(ChatPromptBuilder::class),
+                $this->app->make('ai.chat.sanitizer'),
+                $this->app->make(ModelChain::class),
+                $this->app->make(ChatProvider::class),
+                $this->app->make(NumberGuard::class),
+                (int) config('chat.max_tool_iterations'),
+            ),
+        );
+
+        // A MESMA classe que responde por `Provider` — um arquivo só conhece o
+        // endpoint (Artigo VII), e há teste varrendo `app/` para provar.
+        $this->app->bind(ChatProvider::class, fn (): ChatProvider => $this->app->make(Provider::class));
+
         // ⚠️ As dez regras registradas num lugar só. A ORDEM AQUI NÃO IMPORTA
         // para o usuário: o motor ordena por (severidade, rank), e o rank vem do
         // enum `RuleId`. Estão em ordem numérica por legibilidade, e há teste
@@ -288,6 +320,25 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        /*
+         * ⚠️ O rate limit do chat (§D12, §11.3) — independente do cooldown da
+         * `ModelChain`, e os dois protegem coisas diferentes:
+         *
+         *   - o cooldown protege a COTA do provedor;
+         *   - este protege o PRODUTO.
+         *
+         * Um laço acidental no front consumiria as 1.500 requisições do dia
+         * antes de qualquer cooldown perceber que há algo errado.
+         *
+         * Dois limites, porque as duas falhas têm formas diferentes: rajada
+         * (um laço) e maratona (uma sessão longa demais, que também é sinal de
+         * que algo não está funcionando).
+         */
+        RateLimiter::for('chat', fn (Request $request): array => [
+            Limit::perMinute((int) config('chat.rate_limit.messages_per_minute'))
+                ->by((string) $request->user()?->id),
+            Limit::perDay((int) config('chat.rate_limit.messages_per_day'))
+                ->by((string) $request->user()?->id),
+        ]);
     }
 }

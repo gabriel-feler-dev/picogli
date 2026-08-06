@@ -205,3 +205,43 @@ export interface EvaluationPayload {
     /** ⚠️ ENRIQUECIMENTO, nunca substituição. `null` é o estado normal. */
     narrative: NarrativePayload | null;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Fase 6 — chat (Spec 006)
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Uma consulta feita no turno, como foi GRAVADA.
+ *
+ * ⚠️ É o Artigo III virando interface: o rodapé "dados consultados" lê daqui e
+ * não remonta. Remontar mostraria o resultado de agora — o que torna o número
+ * auditável é ver o que foi consultado naquele turno.
+ */
+export interface ConsultedTool {
+    name: string;
+    arguments?: Record<string, unknown>;
+    result?: Record<string, unknown>;
+    /** Argumento recusado antes da query — o modelo costuma corrigir na volta seguinte. */
+    error?: string;
+}
+
+export interface ChatMessagePayload {
+    id: number;
+    role: 'user' | 'assistant';
+    content: string;
+    /** Vazio para a pergunta, e para a orientação de emergência. */
+    consulted: ConsultedTool[];
+    model: string | null;
+}
+
+export interface ChatPagePayload {
+    conversations: Array<{ id: number; title: string | null; updated_at: string }>;
+    conversation: { id: number; title: string | null } | null;
+    messages: ChatMessagePayload[];
+    /** Sugestões da tela vazia (§10.3) — uma por tipo de ferramenta. */
+    suggestions: string[];
+    /** Sem importação, o chat não tem sobre o que conversar. */
+    has_data: boolean;
+}
