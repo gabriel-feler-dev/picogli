@@ -69,6 +69,32 @@ final class ToolRegistry
         return array_keys($this->tools);
     }
 
+    /**
+     * ⚠️ **A allowlist do Artigo VII no chat, DERIVADA das ferramentas** (§D7).
+     *
+     * A união dos `emittedKeys` das dez. Não é uma lista mantida à mão em
+     * `config/` — uma lista paralela às ferramentas diverge no primeiro dia
+     * corrido, e a divergência é silenciosa: a ferramenta emite, a lista não
+     * permite, o campo some do payload e ninguém percebe.
+     *
+     * *E por quê ainda é revisão editorial:* declarar uma chave nova é editar a
+     * ferramenta, o que é um ato revisável. A allowlist não cresce sozinha.
+     *
+     * @return list<string>
+     */
+    public function allowedKeys(): array
+    {
+        $chaves = [];
+
+        foreach ($this->tools as $tool) {
+            foreach ($tool->describe()->emittedKeys as $chave) {
+                $chaves[$chave] = true;
+            }
+        }
+
+        return array_keys($chaves);
+    }
+
     public function has(string $name): bool
     {
         return isset($this->tools[$name]);

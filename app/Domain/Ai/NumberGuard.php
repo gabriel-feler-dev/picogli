@@ -69,7 +69,28 @@ final class NumberGuard
      */
     public function orphans(string $prose, AiPayload $payload): array
     {
-        [$measured, $literal] = $this->sourcesFrom($payload);
+        return $this->orphansIn($prose, $payload->toArray());
+    }
+
+    /**
+     * A MESMA guarda, sobre uma estrutura qualquer (Spec 006, §D6).
+     *
+     * ⚠️ **É por aqui que o chat entra.** Lá a procedência não é a `evidence` dos
+     * achados: é a união dos `tool_results` do turno (§D3). A lógica é idêntica —
+     * o que muda é de onde vêm as fontes.
+     *
+     * *Por quê uma assinatura nova em vez de forçar tool results dentro de um
+     * `AiPayload`:* mentir sobre a forma do dado para reaproveitar uma assinatura
+     * é o tipo de atalho que ninguém entende dois meses depois. *E por quê não
+     * reescrever a guarda:* ela já tem a distinção `measured`/`literal`, que
+     * custou um defeito de desenho para descobrir.
+     *
+     * @param  array<mixed>  $sources  qualquer estrutura aninhada com os números
+     * @return list<string>
+     */
+    public function orphansIn(string $prose, array $sources): array
+    {
+        [$measured, $literal] = $this->collectSources($sources);
         $orphans = [];
 
         foreach ($this->numbersIn($prose) as $written => $value) {
@@ -123,15 +144,37 @@ final class NumberGuard
      *
      * @return array{0: list<float>, 1: list<float>} `[measured, literal]`
      */
-    private function sourcesFrom(AiPayload $payload): array
+    private function collectSources(array $sources): array
     {
         $measured = [];
         // A lista de isenção é literal: "as 24 horas do dia" não é medição, e
         // tolerar 6% em cima dela autorizaria 22,6 e 25,4 de graça.
         $literal = array_map(fn ($n): float => (float) $n, $this->exemptNumbers);
 
-        $collect = function (array $values) use (&$measured, &$literal): void {
-            foreach ($values as $value) {
+        $walk = function (array $values) use (&$walk, &$measured, &$literal): void {
+            foreach ($values as $key => $value) {
+                // ⚠️ Recursivo desde a fase 6: o payload da narrativa tem dois
+                // níveis, e o do chat tem linha dentro de resultado dentro de
+                // ferramenta. Parar no primeiro nível descartaria a procedência
+                // de toda métrica diária.
+                if (is_array($value)) {
+                    $walk($value);
+
+                    continue;
+                }
+
+                // ⚠️ `rank` é ordem, não medida — e continua LITERAL, como era
+                // antes de esta varredura virar recursiva. Sem esta linha ele
+                // entraria como medição, e a tolerância relativa em cima de um
+                // rank 10 passaria a autorizar "9,5" de graça. Frouxidão pequena,
+                // mas frouxidão introduzida por refatoração é a pior espécie:
+                // ninguém a decidiu.
+                if ($key === 'rank' && (is_int($value) || is_float($value))) {
+                    $literal[] = (float) $value;
+
+                    continue;
+                }
+
                 if (is_int($value) || is_float($value)) {
                     $measured[] = (float) $value;
 
@@ -150,14 +193,7 @@ final class NumberGuard
             }
         };
 
-        $collect($payload->period);
-
-        foreach ($payload->findings as $finding) {
-            $collect($finding['evidence']);
-            // `rank` é número e aparece no payload; citá-lo na prosa seria
-            // estranho, mas não é invenção. Literal: rank não é medida.
-            $literal[] = (float) $finding['rank'];
-        }
+        $walk($sources);
 
         return [$measured, $literal];
     }

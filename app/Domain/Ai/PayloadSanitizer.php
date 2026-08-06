@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Ai;
 
+use App\Domain\Ai\Chat\Value\ChatPayload;
 use App\Domain\Ai\Value\AiPayload;
 use InvalidArgumentException;
 
@@ -56,6 +57,26 @@ final class PayloadSanitizer
     }
 
     /**
+     * A MESMA porta, com outra lista (Spec 006, §D7).
+     *
+     * ⚠️ O chat tem uma allowlist diferente da narrativa — a união dos
+     * `emittedKeys` das dez ferramentas — mas **não tem outra porta**. Instância
+     * nova da mesma classe preserva as duas propriedades ao mesmo tempo: o
+     * Artigo VII continua tendo uma resposta só para "quem monta payload?", e
+     * cada uso mantém o próprio controle editorial sobre o que pode sair.
+     *
+     * *Por quê não uma allowlist única, somando as duas:* a narrativa passaria a
+     * poder emitir `by_date` e `peak_2h` sem ninguém revisar. Uma lista maior
+     * protege menos.
+     *
+     * @param  list<string>  $allowedKeys
+     */
+    public function withKeys(array $allowedKeys): self
+    {
+        return new self($allowedKeys);
+    }
+
+    /**
      * @param  list<array<string, mixed>>  $findings  entradas de `period_reports.findings`
      * @param  array<string, mixed>  $period
      */
@@ -80,6 +101,81 @@ final class PayloadSanitizer
             findings: $findingsLimpos,
             droppedKeys: array_values(array_unique($dropped)),
         );
+    }
+
+    /**
+     * O payload do chat: contexto pré-carregado + resultados de ferramenta.
+     *
+     * ⚠️ **O envelope da chamada é preservado; o RESULTADO é filtrado.** `name`,
+     * `arguments` e `error` descrevem a consulta — `arguments` veio do próprio
+     * modelo, e `error` é texto nosso. O que precisa de allowlist é `result`,
+     * porque é o único bloco que carrega dado do banco.
+     *
+     * @param  list<array<string, mixed>>  $toolResults  de `ToolResult::toArray()`
+     * @param  array<string, mixed>  $context  o pré-carregado de ~500 tokens (§9.3)
+     */
+    public function sanitizeChat(array $toolResults, array $context = []): ChatPayload
+    {
+        $dropped = [];
+        $limpos = [];
+
+        foreach ($toolResults as $resultado) {
+            $limpo = [
+                'name' => (string) ($resultado['name'] ?? ''),
+                'arguments' => $resultado['arguments'] ?? [],
+            ];
+
+            if (isset($resultado['error'])) {
+                $limpo['error'] = (string) $resultado['error'];
+            }
+
+            if (isset($resultado['result']) && is_array($resultado['result'])) {
+                $limpo['result'] = $this->filterDeep($resultado['result'], $dropped);
+            }
+
+            $limpos[] = $limpo;
+        }
+
+        return new ChatPayload(
+            context: $this->filterDeep($context, $dropped),
+            toolResults: $limpos,
+            droppedKeys: array_values(array_unique($dropped)),
+        );
+    }
+
+    /**
+     * Filtra em qualquer profundidade, preservando listas.
+     *
+     * ⚠️ **Índice de lista não é chave.** `rows[0]` é posição, não nome de
+     * campo — tratá-lo como chave desconhecida descartaria toda linha de toda
+     * ferramenta. É a outra metade da regra que a agregação de eventos ensinou:
+     * dado nunca é chave, e posição também não.
+     *
+     * @param  array<mixed>  $values
+     * @param  list<string>  $dropped
+     * @return array<mixed>
+     */
+    private function filterDeep(array $values, array &$dropped): array
+    {
+        $clean = [];
+
+        foreach ($values as $key => $value) {
+            if (is_int($key)) {
+                $clean[$key] = is_array($value) ? $this->filterDeep($value, $dropped) : $value;
+
+                continue;
+            }
+
+            if (! in_array($key, $this->allowedKeys, true)) {
+                $dropped[] = (string) $key;
+
+                continue;
+            }
+
+            $clean[$key] = is_array($value) ? $this->filterDeep($value, $dropped) : $value;
+        }
+
+        return $clean;
     }
 
     /**

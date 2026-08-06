@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Domain\Ai\Chat\ArgumentValidator;
+use App\Domain\Ai\Chat\ChatPromptBuilder;
 use App\Domain\Ai\Chat\EmergencyClassifier;
 use App\Domain\Ai\Chat\Persistence as Chat;
 use App\Domain\Ai\Chat\ToolRegistry;
@@ -22,6 +23,7 @@ use App\Domain\Patterns\Rules;
 use App\Domain\Presentation\LangProseRenderer;
 use App\Domain\Presentation\MetricTranslator;
 use App\Infrastructure\Ai\CacheCooldownStore;
+use App\Infrastructure\Ai\FileChatPromptBuilder;
 use App\Infrastructure\Ai\FilePromptBuilder;
 use App\Infrastructure\Ai\GeminiProvider;
 use Illuminate\Http\Client\Factory as HttpFactory;
@@ -163,6 +165,20 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
 
+        // ⚠️ O prompt de chat, com as MESMAS listas interpoladas (FR-606) e o
+        // catálogo de ferramentas renderizado dos descritores reais — escrever a
+        // lista à mão no arquivo criaria a divergência mais cara possível: o
+        // prompt anunciando ferramenta que não existe, ou omitindo uma que
+        // existe, sem nada denunciar.
+        $this->app->singleton(
+            ChatPromptBuilder::class,
+            fn (): ChatPromptBuilder => new FileChatPromptBuilder(
+                resource_path(config('chat.prompt_path')),
+                config('tone.forbidden_vocabulary'),
+                config('tone.forbidden_conduct'),
+            ),
+        );
+
         // ⚠️ O ÚNICO lugar do projeto que fala com um provedor de IA. A chave
         // pode ser `null`: sem ela o provider classifica como `Unauthorized`,
         // a cadeia devolve `null` e a tela cai para o fallback (Artigo I).
@@ -218,6 +234,24 @@ class AppServiceProvider extends ServiceProvider
                 $this->app->make(Chat\ComparePeriodsTool::class),
                 $this->app->make(Chat\FindingsTool::class),
             ], new ArgumentValidator),
+        );
+
+        /*
+         * ⚠️ A porta do Artigo VII para o chat (§D7) — MESMA classe, outra lista.
+         *
+         * A allowlist é a união dos `emittedKeys` das dez ferramentas, derivada
+         * delas em vez de mantida à mão: uma lista paralela divergiria no
+         * primeiro dia corrido, e a divergência é silenciosa.
+         *
+         * ⚠️ **Instância separada, e não uma lista somada à da narrativa.** Uma
+         * allowlist maior protege MENOS: a narrativa passaria a poder emitir
+         * `by_date` e `peak_2h` sem ninguém revisar.
+         */
+        $this->app->singleton(
+            'ai.chat.sanitizer',
+            fn (): PayloadSanitizer => new PayloadSanitizer(
+                $this->app->make(ToolRegistry::class)->allowedKeys(),
+            ),
         );
 
         // ⚠️ A evidência dos achados sai pela MESMA allowlist da fase 5. Uma
