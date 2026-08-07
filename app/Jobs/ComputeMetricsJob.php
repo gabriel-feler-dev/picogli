@@ -29,5 +29,24 @@ class ComputeMetricsJob implements ShouldQueue
     public function handle(DailyMetricsWriter $writer): void
     {
         $writer->write($this->userId, $this->dates);
+
+        /*
+         * ⚠️⚠️ **ESTE ELO ESTAVA FALTANDO ATÉ 07/08/2026.**
+         *
+         * O `ImportCsvJob` disparava este job, e aqui a corrente PARAVA. Nada no
+         * app inteiro disparava o `ComputePatternsJob` — a busca por ele em
+         * `app/` só encontrava o próprio arquivo.
+         *
+         * Consequência: `period_reports` nunca era escrito a partir de uma
+         * importação, e a tela `/avaliacao` dizia "ainda não há avaliação" para
+         * sempre, com 3.616 leituras e 14 dias de métricas no banco.
+         *
+         * ⚠️ **Por que os testes não pegaram:** cada job é testado isolado —
+         * instancia-se o `ComputePatternsJob`, roda, confere o que gravou. Todos
+         * passam. Nenhum teste andava do upload até a avaliação, então o elo
+         * ausente não tinha onde aparecer. O `PatternChainTest` existe agora para
+         * isso.
+         */
+        ComputePatternsJob::dispatch($this->userId);
     }
 }

@@ -52,6 +52,19 @@ class ComputePatternsJob implements ShouldQueue
             return null;
         }
 
-        return $writer->write($this->userId, $dataset, $engine->run($dataset));
+        $report = $writer->write($this->userId, $dataset, $engine->run($dataset));
+
+        /*
+         * ⚠️ O segundo elo que faltava (07/08/2026). Ver a nota no
+         * `ComputeMetricsJob`.
+         *
+         * Vai DEPOIS da escrita e recebe o id: o job da narrativa lê o relatório
+         * do banco, então ele precisa existir. E continua sendo job separado
+         * porque é o único passo que depende de rede — cota esgotada não pode
+         * atrasar a persistência de achado que não depende de nada externo.
+         */
+        GenerateNarrativeJob::dispatch($report->id);
+
+        return $report;
     }
 }
