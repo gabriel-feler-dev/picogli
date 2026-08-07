@@ -296,7 +296,10 @@ it('toda média nova da fase 7 vem com o denominador', function () {
  * ⚠️ **Artigo VI, camada 5 — as telas novas trazem o rodapé.**
  */
 it('as telas novas trazem o rodapé de fronteira clínica', function (string $arquivo) {
-    expect(file_get_contents(resource_path("js/Pages/{$arquivo}")))->toContain('ClinicalFooter');
+    // ⚠️ Ver a nota do ComparisonTest: o rodapé mudou de lugar na Spec 008,
+    // e a corrente cobrada passou a ser tela -> casca -> rodapé.
+    expect(file_get_contents(resource_path("js/Pages/{$arquivo}")))->toContain('AppShell');
+    expect(file_get_contents(resource_path('js/Layouts/AppShell.tsx')))->toContain('ClinicalFooter');
 })->with(['Meals.tsx', 'Comparison.tsx']);
 
 /**

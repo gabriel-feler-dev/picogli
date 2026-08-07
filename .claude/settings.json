@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(& \"$env:USERPROFILE\\\\php84\\\\php.exe\" artisan test --filter='ArticleOneTest|ChatArticleTest|PhaseSevenRegressionTest' 2>&1 | Select-Object -Last 6)",
+      "PowerShell(& \"$env:USERPROFILE\\\\php84\\\\php.exe\" artisan test --filter='ThemeAndBrand' 2>&1 | Select-Object -Last 30)",
+      "PowerShell(& \"$env:USERPROFILE\\\\php84\\\\php.exe\" artisan test --filter='ThemeAndBrand' 2>&1 | Select-Object -Last 35)",
+      "PowerShell(npm run types 2>&1 | Select-Object -Last 10; \"--- identidade ---\"; & \"$env:USERPROFILE\\\\php84\\\\php.exe\" artisan test --filter='ArticleOneTest|ChatArticleTest|PhaseSevenRegressionTest' 2>&1 | Select-Object -Last 4)",
+      "Bash(git checkout *)",
+      "PowerShell(python \"C:\\\\Users\\\\GABRIE~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-GabrielFelerSantos-Desktop-Feler-PicoGli\\\\6bf179a6-8cd2-4b4b-95b3-7e5f38dc6f45\\\\scratchpad\\\\shell.py\")",
+      "Bash(grep -n \"mx-auto\\\\|ClinicalFooter\\\\|<AppNav\\\\|^        <>\\\\|</div>\\\\s*$\" resources/js/Pages/Chat.tsx)",
+      "PowerShell(npm run build 2>&1)",
+      "PowerShell(\"--- build ---\")",
+      "PowerShell(& \"$env:USERPROFILE\\\\php84\\\\php.exe\" artisan test --filter='ArticleOne|ChatArticle|PhaseSevenRegression|ThemeAndBrand|ChatScreen|NarrativeScreen|EvaluationScreen|Comparison|MealLabel|PdfAggregate|InertiaWiring|NoStatisticsInJavaScript' 2>&1 | Select-Object -Last 60)",
+      "Bash(grep -v \"^--$\")",
+      "PowerShell(& \"$env:USERPROFILE\\\\php84\\\\php.exe\" artisan test --filter='ArticleOne|ChatArticle|PhaseSevenRegression|ThemeAndBrand|ChatScreen|NarrativeScreen|EvaluationScreen|Comparison|MealLabel|PdfAggregate|InertiaWiring|NoStatisticsInJavaScript' 2>&1 | Select-Object -Last 25)",
+      "PowerShell(& \"$env:USERPROFILE\\\\php84\\\\php.exe\" artisan test 2>&1 | Select-Object -Last 20)"
+    ]
+  }
+}

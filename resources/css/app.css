@@ -3,7 +3,116 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
+/*
+ * Tema por ATRIBUTO, não por media query (Spec 008 §D5).
+ *
+ * ⚠️ Sem esta linha, `dark:` resolve por `prefers-color-scheme` e a escolha da
+ * pessoa não tem efeito nenhum. Foi exatamente o que aconteceu até 07/08/2026:
+ * o `app.blade.php` lia o `localStorage` e cravava uma classe que o Tailwind 4
+ * ignorava. O tema escuro funcionava — mas só seguindo o sistema, e ninguém
+ * notou porque o resultado parecia certo.
+ */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /*
+     * Marca — extraída de `picogli_logo_dark_purple_pop_mint.svg`.
+     *
+     * ⚠️⚠️ O ROXO É A COR DE INTERAÇÃO. A MENTA FICA NO LOGO (§D2).
+     *
+     * `rangePalette.target` é `#10b981` e significa "na faixa" — significado
+     * CLÍNICO. A menta da marca é `#5DCAA5`. São vizinhos. Se a menta virar cor
+     * de botão e de link, a pessoa aprende dois significados para o mesmo verde,
+     * e um deles decide se ela acha que está bem.
+     *
+     * Ninguém reclamaria de um botão menta. Só se acostumaria a associar verde
+     * a "certo" — e levaria a associação para o gráfico. Por isso a marca se
+     * afasta do vocabulário clínico, e não o contrário: `rangePalette.ts` não
+     * é tocado por esta fase.
+     */
+    --color-brand-50: #f2f1fa;
+    --color-brand-100: #e7e5f5;
+    --color-brand-300: #8f86d6;
+    --color-brand-500: #443c9b;
+    --color-brand-700: #26215c;
+    --color-brand-900: #1a1640;
+
+    /* Verde escuro do "Gli" no logo. Escuro o bastante para não se confundir
+       com a faixa-alvo — por isso pode ser texto de marca sobre fundo claro. */
+    --color-brand-ink: #0f6e56;
+
+    /* ⚠️ SÓ no logo. Há teste de varredura (T700.6). */
+    --color-brand-mint: #5dcaa5;
+
+    /* Cinza quente da tagline. */
+    --color-ink-muted: #5f5e5a;
+}
+
+/*
+ * Diz ao navegador qual é o tema, para que campo de formulário, barra de
+ * rolagem e menu nativo acompanhem. Sem isto, um `<select>` continua branco
+ * dentro de uma tela escura.
+ */
+[data-theme='light'] {
+    color-scheme: light;
+}
+
+[data-theme='dark'] {
+    color-scheme: dark;
+}
+
+/*
+ * ─────────────────────────────────────────────────────────────
+ * Movimento — Spec 008 §D3 e §D4
+ * ─────────────────────────────────────────────────────────────
+ *
+ * ⚠️⚠️ O conteúdo entra como UM BLOCO. Nada escalonado.
+ *
+ * Não é preguiça de escrever cascata: é o Artigo V aplicado ao tempo. Se o
+ * valor aparecesse e a cobertura fizesse fade-in 200 ms depois, existiria um
+ * instante real em que a tela mostra "média 142" sem "sobre 91,1% de
+ * cobertura" — e o artigo diz que o denominador nunca fica escondido.
+ *
+ * ⚠️ E nenhum NÚMERO anima o próprio valor. Um contador subindo até 83,9%
+ * transforma o dado em conquista, e no mês do 61% a mesma animação vira
+ * derrota. O tom premiativo é o Artigo IV com o sinal trocado.
+ */
+@keyframes picogli-enter {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.picogli-enter {
+    animation: picogli-enter 200ms ease-out both;
+}
+
+/*
+ * ⚠️ `prefers-reduced-motion` desliga TUDO que não seja opacidade.
+ *
+ * Não é gentileza opcional: movimento involuntário é gatilho real de enjoo e
+ * vertigem para parte das pessoas. Um app que a pessoa abre justamente quando
+ * está passando mal é o pior lugar possível para ignorar isso.
+ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .picogli-enter {
+        animation: none;
+    }
 }

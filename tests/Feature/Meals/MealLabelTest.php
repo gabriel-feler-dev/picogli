@@ -442,5 +442,12 @@ it('os componentes de refeição não fazem conta', function (string $arquivo) {
 })->with(['Pages/Meals.tsx', 'Components/MealRow.tsx']);
 
 it('a tela traz o rodapé de fronteira clínica', function () {
-    expect(file_get_contents(resource_path('js/Pages/Meals.tsx')))->toContain('ClinicalFooter');
+    // ⚠️ O rodapé passou a morar na casca (Spec 008 §D6). A garantia do
+    // Artigo VI, camada 5, ficou MAIS forte: antes, apagar a linha de uma tela
+    // tirava o rodapé só dela; agora ele chega por construção a todas.
+    //
+    // O que se cobra aqui é a corrente inteira: a tela usa a casca, E a casca
+    // renderiza o rodapé. Verificar só um dos elos deixaria o outro livre.
+    expect(file_get_contents(resource_path('js/Pages/Meals.tsx')))->toContain('AppShell');
+    expect(file_get_contents(resource_path('js/Layouts/AppShell.tsx')))->toContain('ClinicalFooter');
 });

@@ -8,13 +8,25 @@
          sem recarregar o documento. --}}
     <title inertia>{{ config('app.name', 'PicoGli') }}</title>
 
-    {{-- Tema claro/escuro decidido antes da primeira pintura, para não piscar
-         branco em quem usa tema escuro. --}}
+    {{-- Tema decidido antes da primeira pintura (Spec 008 §D5).
+
+         ⚠️ INLINE E SÍNCRONO, de propósito. Um `useEffect` do React roda depois
+         da primeira pintura: quem abre o app de madrugada para conferir uma hipo
+         levaria um flash de tela branca na cara.
+
+         ⚠️ Grava em `data-theme`, não numa classe. Até 07/08/2026 este script
+         adicionava `.dark` e o Tailwind 4 ignorava — a escolha da pessoa não
+         tinha efeito nenhum, e o tema só seguia o sistema. Ver `app.css`.
+
+         Três preferências: 'light', 'dark', 'system' (padrão). O que fica no
+         `localStorage` é a PREFERÊNCIA; `data-theme` recebe o resultado dela. --}}
     <script>
-        if (localStorage.getItem('theme') === 'dark' ||
-            (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        }
+        (function () {
+            var pref = localStorage.getItem('theme') || 'system';
+            var dark = pref === 'dark' || (pref === 'system' &&
+                window.matchMedia('(prefers-color-scheme: dark)').matches);
+            document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        })();
     </script>
 
     {{-- Sem Ziggy de propósito: as rotas desta fase são poucas e fixas, e

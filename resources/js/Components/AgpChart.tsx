@@ -51,7 +51,11 @@ export function AgpChart({ percentiles, ranges }: Props) {
 
     return (
         <figure aria-label="Perfil de um dia típico, sobrepondo todos os dias do período">
-            <ResponsiveContainer width="100%" height={260}>
+            {/* ⚠️ Altura por CSS, não fixa em pixel (Spec 008 §D7): 224 px no
+                celular, 288 no desktop. Uma altura única deixaria o gráfico
+                espremido numa ponta e esticado na outra. */}
+            <div className="h-56 w-full sm:h-72">
+            <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 4, left: 0 }}>
                     {/* Faixa-alvo sombreada: a referência de leitura do gráfico. */}
                     <ReferenceArea
@@ -62,10 +66,16 @@ export function AgpChart({ percentiles, ranges }: Props) {
                         ifOverflow="extendDomain"
                     />
 
+                    {/* ⚠️ `minTickGap` em vez de `interval` fixo (§D7): com
+                        `interval={2}` os rótulos ficavam colados em 375 px e
+                        sobravam no desktop. Assim o Recharts remove rótulo
+                        conforme a largura real — e **nenhum dado some**, só o
+                        rótulo do eixo. */}
                     <XAxis
                         dataKey="hour"
                         tickFormatter={(hour: number) => `${String(hour).padStart(2, '0')}h`}
-                        interval={2}
+                        interval="preserveStartEnd"
+                        minTickGap={28}
                         tick={{ fontSize: 11 }}
                         stroke="currentColor"
                         className="text-slate-400"
@@ -86,21 +96,27 @@ export function AgpChart({ percentiles, ranges }: Props) {
                         formatter={(value, name) => [value, name === 'p50' ? 'mediana' : name]}
                     />
 
-                    {/* connectNulls ausente = false: a lacuna aparece como lacuna. */}
+                    {/* connectNulls ausente = false: a lacuna aparece como lacuna.
+                        ⚠️ Bandas e mediana em ROXO da marca (§D2). Antes eram azul
+                        `#38bdf8`/`#0284c7` — funcionava, mas deixava duas cores
+                        disputando "isto é normal" com o verde da faixa-alvo. Agora
+                        o ÚNICO verde do gráfico é o `#10b981` da `ReferenceArea`,
+                        que é o vocabulário clínico. */}
                     <Area dataKey="p5" stackId="agp" stroke="none" fill="transparent" isAnimationActive={false} />
-                    <Area dataKey="band25" stackId="agp" stroke="none" fill="#38bdf8" fillOpacity={0.15} isAnimationActive={false} />
-                    <Area dataKey="band75" stackId="agp" stroke="none" fill="#38bdf8" fillOpacity={0.3} isAnimationActive={false} />
-                    <Area dataKey="band95" stackId="agp" stroke="none" fill="#38bdf8" fillOpacity={0.15} isAnimationActive={false} />
+                    <Area dataKey="band25" stackId="agp" stroke="none" fill="#8f86d6" fillOpacity={0.2} isAnimationActive={false} />
+                    <Area dataKey="band75" stackId="agp" stroke="none" fill="#8f86d6" fillOpacity={0.4} isAnimationActive={false} />
+                    <Area dataKey="band95" stackId="agp" stroke="none" fill="#8f86d6" fillOpacity={0.2} isAnimationActive={false} />
 
                     <Line
                         dataKey="p50"
-                        stroke="#0284c7"
+                        stroke="#443c9b"
                         strokeWidth={2}
                         dot={false}
                         isAnimationActive={false}
                     />
                 </ComposedChart>
             </ResponsiveContainer>
+            </div>
 
             <figcaption className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                 A linha é a mediana de cada hora. As faixas mostram onde ficaram 50% e 90% das

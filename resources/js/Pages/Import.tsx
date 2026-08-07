@@ -1,10 +1,13 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
-import { ClinicalFooter } from '@/Components/ClinicalFooter';
 import { ImportSummary } from '@/Components/ImportSummary';
 import { PdfAggregateBlock } from '@/Components/PdfAggregateBlock';
 import type { ImportSummaryPayload, PdfAggregatePayload } from '@/types';
+import AppShell from '@/Layouts/AppShell';
+import { ImportProgress } from '@/Components/ImportProgress';
+import { Alert } from '@/Components/ui/Alert';
+import { Button } from '@/Components/ui/Button';
 
 interface Props {
     imports: ImportSummaryPayload[];
@@ -42,9 +45,11 @@ export default function Import({ imports, timezones, defaultTimezone,
     // Enquanto há importação em andamento, recarrega só os dados dela. Em
     // produção a fila é acionada por cron (ADR-5), então o resumo pode demorar
     // até um minuto para aparecer — e uma tela parada pareceria travada.
-    const running = imports.some(
+    const emAndamento = imports.find(
         (item) => item.status === 'pending' || item.status === 'processing',
     );
+
+    const running = emAndamento !== undefined;
 
     useEffect(() => {
         if (!running) {
@@ -62,7 +67,7 @@ export default function Import({ imports, timezones, defaultTimezone,
         <>
             <Head title="Importar" />
 
-            <div className="mx-auto max-w-3xl px-6 py-10">
+            <AppShell>
                 <header>
                     <h1 className="text-2xl font-semibold tracking-tight">Importar export do CareLink</h1>
                     <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -72,9 +77,18 @@ export default function Import({ imports, timezones, defaultTimezone,
                 </header>
 
                 {flash !== undefined && (
-                    <p className="mt-6 rounded-lg border border-sky-300 bg-sky-50 px-4 py-3 text-sm text-sky-900 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-200">
+                    <Alert tone="note" className="mt-6">
                         {flash}
-                    </p>
+                    </Alert>
+                )}
+
+                {/* ⚠️ O estado da importação em andamento vem ANTES do formulário:
+                    é a resposta à pergunta que a pessoa acabou de fazer ao enviar o
+                    arquivo. Embaixo da lista, ela reenviaria antes de rolar até lá. */}
+                {emAndamento !== undefined && (
+                    <div className="mt-6">
+                        <ImportProgress status={emAndamento.status} />
+                    </div>
                 )}
 
                 <form
@@ -100,11 +114,11 @@ export default function Import({ imports, timezones, defaultTimezone,
                         }}
                         className={`rounded-xl border-2 border-dashed px-6 py-10 text-center transition ${
                             dragging
-                                ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/30'
+                                ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10'
                                 : 'border-slate-300 dark:border-slate-700'
                         }`}
                     >
-                        <label htmlFor="file" className="cursor-pointer text-sm font-medium text-sky-700 dark:text-sky-400">
+                        <label htmlFor="file" className="cursor-pointer text-sm font-medium text-brand-700 dark:text-brand-300">
                             Escolher arquivo
                             <input
                                 id="file"
@@ -138,7 +152,7 @@ export default function Import({ imports, timezones, defaultTimezone,
                             id="timezone"
                             value={data.timezone}
                             onChange={(event) => setData('timezone', event.target.value)}
-                            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
+                            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-slate-700 dark:bg-slate-900"
                         >
                             {timezones.map((timezone) => (
                                 <option key={timezone} value={timezone}>
@@ -154,19 +168,15 @@ export default function Import({ imports, timezones, defaultTimezone,
                     {progress !== null && progress !== undefined && (
                         <div className="h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                             <div
-                                className="h-full bg-sky-600 transition-all"
+                                className="h-full bg-brand-700 transition-all"
                                 style={{ width: `${progress.percentage ?? 0}%` }}
                             />
                         </div>
                     )}
 
-                    <button
-                        type="submit"
-                        disabled={processing || data.file === null}
-                        className="rounded-md bg-sky-600 px-4 py-2 font-medium text-white hover:bg-sky-700 disabled:opacity-50"
-                    >
+                    <Button type="submit" disabled={processing || data.file === null}>
                         {processing ? 'Enviando…' : 'Importar'}
-                    </button>
+                    </Button>
                 </form>
 
                 <section className="mt-12">
@@ -188,8 +198,7 @@ export default function Import({ imports, timezones, defaultTimezone,
                 {/* ⚠️ Não renderiza nada quando a lista é vazia (§D7, T607). */}
                 <PdfAggregateBlock aggregates={pdfAggregates} />
 
-                <ClinicalFooter />
-            </div>
+            </AppShell>
         </>
     );
 }

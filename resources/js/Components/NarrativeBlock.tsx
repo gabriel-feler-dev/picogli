@@ -22,17 +22,17 @@ export function NarrativeBlock({ narrative }: { narrative: NarrativePayload }) {
 
     return (
         <section
-            className="mt-8 rounded-xl border border-sky-200 bg-sky-50/40 p-5 dark:border-sky-900/50 dark:bg-sky-950/20"
+            className="mt-8 rounded-xl border border-brand-100 bg-brand-50/40 p-5 dark:border-brand-500/40 dark:bg-brand-500/10"
             aria-label="Resumo escrito por inteligência artificial"
         >
             <header className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="inline-flex items-center gap-1.5 text-sm font-semibold text-sky-900 dark:text-sky-200">
+                <h2 className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-900 dark:text-brand-100">
                     <span aria-hidden="true">✦</span>
                     Resumo escrito por IA
                 </h2>
 
                 {narrative.model !== null && (
-                    <span className="text-xs text-sky-800/70 dark:text-sky-300/70">
+                    <span className="text-xs text-brand-700/70 dark:text-brand-300/70">
                         {narrative.model}
                         {narrative.generated_at !== null && ` · ${narrative.generated_at}`}
                     </span>
@@ -41,7 +41,7 @@ export function NarrativeBlock({ narrative }: { narrative: NarrativePayload }) {
 
             {/* ⚠️ A frase que separa o que é calculado do que é escrito. Sem ela,
                 o leitor não tem como saber que os números vêm de outro lugar. */}
-            <p className="mt-1 text-xs text-sky-800/80 dark:text-sky-300/80">
+            <p className="mt-1 text-xs text-brand-700/80 dark:text-brand-300/80">
                 Escrito a partir dos achados abaixo. Os números são calculados pelo PicoGli;
                 o texto é uma redação deles.
             </p>

@@ -1,9 +1,10 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 
-import { ClinicalFooter } from '@/Components/ClinicalFooter';
 import { ToolTrace } from '@/Components/ToolTrace';
 import type { ChatPagePayload } from '@/types';
+import AppShell from '@/Layouts/AppShell';
+import { Button, ButtonLink } from '@/Components/ui/Button';
 
 /**
  * Tela de conversa (Spec 006, FR-610, §10.3).
@@ -60,23 +61,29 @@ export default function Chat({
         <>
             <Head title="Conversar" />
 
-            <div className="mx-auto flex max-w-5xl gap-8 px-6 py-10">
+            <AppShell>
+                {/* ⚠️ A lista de conversas some abaixo de lg, não abaixo de md:
+                    a coluna principal precisa de largura para a conversa caber, e
+                    a lista continua alcançável pelo botão "Nova conversa". */}
+                <div className="flex gap-8">
                 <aside className="hidden w-56 shrink-0 lg:block">
-                    <Link
+                    <ButtonLink
                         href="/conversar"
                         method="post"
                         as="button"
-                        className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-medium transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                        className="w-full"
+                        variant="secondary"
+                        size="sm"
                     >
                         Nova conversa
-                    </Link>
+                    </ButtonLink>
 
                     <nav className="mt-4 space-y-1">
                         {conversations.map((c) => (
                             <Link
                                 key={c.id}
                                 href={`/conversar/${c.id}`}
-                                className={`block truncate rounded px-3 py-2 text-sm transition ${
+                                className={`block truncate rounded px-3 py-2 text-sm transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 ${
                                     conversation?.id === c.id
                                         ? 'bg-slate-100 font-medium dark:bg-slate-800'
                                         : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/50'
@@ -104,7 +111,7 @@ export default function Chat({
                             </p>
                             <Link
                                 href="/importar"
-                                className="mt-4 inline-block text-sm font-medium text-sky-700 hover:underline dark:text-sky-400"
+                                className="mt-4 inline-block text-sm font-medium text-brand-700 hover:underline dark:text-brand-300"
                             >
                                 Ir para importação →
                             </Link>
@@ -124,7 +131,7 @@ export default function Chat({
                                         key={sugestao}
                                         type="button"
                                         onClick={() => enviar(sugestao)}
-                                        className="rounded-full border border-slate-300 px-3 py-1.5 text-sm text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                                        className="rounded-full border border-slate-300 px-3 py-1.5 text-sm text-slate-700 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                                     >
                                         {sugestao}
                                     </button>
@@ -160,6 +167,29 @@ export default function Chat({
                             </article>
                         ))}
 
+                        {/* ⚠️ O turno demora: o modelo pode chamar ferramenta até
+                            cinco vezes antes de responder (§D5 da Spec 006), e cada
+                            chamada é uma consulta ao banco. Sem este bloco, a tela
+                            fica idêntica por vários segundos depois do envio — e a
+                            pessoa reenvia a pergunta.
+
+                            "Consultando seus dados" é literal: é exatamente o que
+                            está acontecendo. O modelo não recebe os dados, ele
+                            recebe ferramentas (Artigo III). */}
+                        {processing && (
+                            <div
+                                role="status"
+                                aria-live="polite"
+                                className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400"
+                            >
+                                <span
+                                    aria-hidden="true"
+                                    className="size-3.5 animate-spin rounded-full border-2 border-slate-300 border-t-brand-500 motion-reduce:animate-none dark:border-slate-700 dark:border-t-brand-300"
+                                />
+                                Consultando seus dados…
+                            </div>
+                        )}
+
                         <div ref={fim} />
                     </div>
 
@@ -173,15 +203,11 @@ export default function Chat({
                                     placeholder="Pergunte sobre seus números…"
                                     maxLength={2000}
                                     disabled={processing}
-                                    className="flex-1 rounded-md border border-slate-300 px-4 py-2.5 text-[15px] outline-none focus:border-sky-500 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900"
+                                    className="flex-1 rounded-md border border-slate-300 px-4 py-2.5 text-[15px] outline-none focus:border-brand-500 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900"
                                 />
-                                <button
-                                    type="submit"
-                                    disabled={processing || data.message.trim() === ''}
-                                    className="rounded-md bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900"
-                                >
+                                <Button type="submit" disabled={processing || data.message.trim() === ''}>
                                     {processing ? 'Consultando…' : 'Enviar'}
-                                </button>
+                                </Button>
                             </div>
 
                             {errors.message !== undefined && (
@@ -191,19 +217,19 @@ export default function Chat({
                     )}
 
                     {has_data && conversation === null && (
-                        <Link
+                        <ButtonLink
                             href="/conversar"
                             method="post"
                             as="button"
-                            className="mt-8 rounded-md bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900"
+                            className="mt-8"
                         >
                             Começar uma conversa
-                        </Link>
+                        </ButtonLink>
                     )}
 
-                    <ClinicalFooter />
                 </main>
-            </div>
+                </div>
+            </AppShell>
         </>
     );
 }

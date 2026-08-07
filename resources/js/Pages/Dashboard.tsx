@@ -4,8 +4,12 @@ import { AgpChart } from '@/Components/AgpChart';
 import { DayGrid } from '@/Components/DayGrid';
 import { HourlyBar } from '@/Components/HourlyBar';
 import { MetricCard } from '@/Components/MetricCard';
-import { ClinicalFooter } from '@/Components/ClinicalFooter';
 import type { PeriodSummaryPayload } from '@/types';
+import AppShell from '@/Layouts/AppShell';
+import { Alert } from '@/Components/ui/Alert';
+import { ButtonLink } from '@/Components/ui/Button';
+import { Section } from '@/Components/ui/Card';
+import { EmptyState } from '@/Components/ui/EmptyState';
 
 interface Props {
     summary: PeriodSummaryPayload;
@@ -26,13 +30,13 @@ export default function Dashboard({ summary, isEmpty }: Props) {
         <>
             <Head title="Painel" />
 
-            <div className="mx-auto max-w-4xl px-6 py-10">
+            <AppShell>
                 <header>
                     <div className="flex items-baseline justify-between gap-4">
                         <h1 className="text-2xl font-semibold tracking-tight">Seus últimos dias</h1>
                         <Link
                             href="/importar"
-                            className="text-sm font-medium text-sky-700 hover:underline dark:text-sky-400"
+                            className="text-sm font-medium text-brand-700 hover:underline dark:text-brand-300"
                         >
                             Importar arquivo
                         </Link>
@@ -50,57 +54,74 @@ export default function Dashboard({ summary, isEmpty }: Props) {
                 </header>
 
                 {summary.validity.message !== null && (
-                    <p className="mt-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+                    <Alert tone="caution" className="mt-6">
                         {summary.validity.message}
-                    </p>
+                    </Alert>
                 )}
 
                 {summary.stale_message !== null && (
-                    <p className="mt-3 rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-900">
+                    <Alert tone="note" className="mt-3">
                         {summary.stale_message}
-                    </p>
+                    </Alert>
                 )}
 
                 {isEmpty ? (
-                    <p className="mt-10 text-sm text-slate-500 dark:text-slate-400">
-                        Nenhuma leitura importada ainda.
-                    </p>
+                    <div className="mt-10">
+                        <EmptyState
+                            kind="pending"
+                            title="Nenhuma leitura importada ainda"
+                            action={<ButtonLink href="/importar">Importar um export</ButtonLink>}
+                        >
+                            Assim que um export do CareLink for lido, os números deste período
+                            aparecem aqui.
+                        </EmptyState>
+                    </div>
                 ) : (
                     <>
+                        {/*
+                          ⚠️ HIERARQUIA DE LEITURA (T704.1) — a primeira métrica ocupa a
+                          largura toda; as demais dividem a grade.
+
+                          A ORDEM continua vindo do servidor. Escolher aqui qual é a
+                          principal seria decidir significado clínico no cliente — a
+                          mesma linha que a `Evaluation` não cruza ao renderizar os
+                          achados na ordem em que chegam.
+                        */}
                         <section className="mt-8 grid gap-4 sm:grid-cols-2">
-                            {summary.metrics.map((metric) => (
-                                <MetricCard key={metric.key} metric={metric} />
+                            {summary.metrics.map((metric, index) => (
+                                <div key={metric.key} className={index === 0 ? 'sm:col-span-2' : undefined}>
+                                    <MetricCard metric={metric} />
+                                </div>
                             ))}
                         </section>
 
-                        <section className="mt-10">
-                            <h2 className="text-sm font-semibold">Seu dia típico</h2>
-                            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
-                                Todos os dias do período sobrepostos, hora por hora.
-                            </p>
+                        <Section
+                            title="Seu dia típico"
+                            hint="Todos os dias do período sobrepostos, hora por hora."
+                            className="mt-10"
+                        >
                             <AgpChart percentiles={summary.hourly_percentiles} ranges={summary.ranges} />
-                        </section>
+                        </Section>
 
-                        <section className="mt-10">
-                            <h2 className="text-sm font-semibold">Onde estão os problemas</h2>
-                            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
-                                A faixa em que sua glicose mais ficou, em cada hora.
-                            </p>
+                        <Section
+                            title="Onde estão os problemas"
+                            hint="A faixa em que sua glicose mais ficou, em cada hora."
+                            className="mt-10"
+                        >
                             <HourlyBar profile={summary.hourly_profile} />
-                        </section>
+                        </Section>
 
-                        <section className="mt-10">
-                            <h2 className="text-sm font-semibold">Dia por dia</h2>
-                            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
-                                Quanto tempo na faixa boa em cada dia.
-                            </p>
+                        <Section
+                            title="Dia por dia"
+                            hint="Quanto tempo na faixa boa em cada dia."
+                            className="mt-10"
+                        >
                             <DayGrid days={summary.daily_metrics} />
-                        </section>
+                        </Section>
                     </>
                 )}
 
-                <ClinicalFooter />
-            </div>
+            </AppShell>
         </>
     );
 }

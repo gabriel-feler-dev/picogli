@@ -1,9 +1,12 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 
-import { ClinicalFooter } from '@/Components/ClinicalFooter';
 import { FindingCard } from '@/Components/FindingCard';
 import { NarrativeBlock } from '@/Components/NarrativeBlock';
 import type { EvaluationPayload } from '@/types';
+import AppShell from '@/Layouts/AppShell';
+import { ButtonLink } from '@/Components/ui/Button';
+import { Alert } from '@/Components/ui/Alert';
+import { EmptyState } from '@/Components/ui/EmptyState';
 
 /**
  * Tela de avaliação (FR-414, FR-415).
@@ -36,7 +39,7 @@ export default function Evaluation({
         <>
             <Head title="Avaliação" />
 
-            <div className="mx-auto max-w-3xl px-6 py-10">
+            <AppShell>
                 <header>
                     <h1 className="text-2xl font-semibold tracking-tight">Avaliação do período</h1>
                     <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -60,26 +63,23 @@ export default function Evaluation({
 
                 {/* §D9 — sinaliza, nunca recalcula em silêncio. */}
                 {is_stale && (
-                    <p className="mt-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+                    <Alert tone="caution" className="mt-6">
                         Este relatório foi gerado por uma versão anterior das verificações. Os
                         achados continuam válidos para o que mediam, mas vale gerar de novo.
-                    </p>
+                    </Alert>
                 )}
 
                 {!has_report && (
-                    <section className="mt-10 rounded-xl border border-slate-200 p-6 dark:border-slate-800">
-                        <h2 className="text-base font-semibold">Ainda não há avaliação</h2>
-                        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                    <div className="mt-10">
+                        <EmptyState
+                            kind="pending"
+                            title="Ainda não há avaliação"
+                            action={<ButtonLink href="/importar">Importar</ButtonLink>}
+                        >
                             Importe um export do CareLink para que as verificações possam rodar
                             sobre os seus dados.
-                        </p>
-                        <Link
-                            href="/importar"
-                            className="mt-4 inline-block rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700"
-                        >
-                            Importar
-                        </Link>
-                    </section>
+                        </EmptyState>
+                    </div>
                 )}
 
                 {/* ⚠️ §D10 — ESTADO VAZIO DIGNO. Nenhum padrão detectado é boa
@@ -87,17 +87,16 @@ export default function Evaluation({
                     pressão de mostrar algo é o que faz um produto de saúde virar
                     gerador de ansiedade. */}
                 {has_report && findings.length === 0 && (
-                    <section className="mt-10 rounded-xl border border-emerald-200 bg-emerald-50/50 p-6 dark:border-emerald-900/50 dark:bg-emerald-950/20">
-                        <h2 className="text-base font-semibold text-emerald-900 dark:text-emerald-200">
-                            Nenhum padrão para apontar neste período
-                        </h2>
-                        <p className="mt-2 text-sm text-emerald-900/80 dark:text-emerald-200/80">
-                            As dez verificações rodaram e nenhuma encontrou algo que valesse
-                            destacar. Isso é uma boa notícia: quer dizer que não houve concentração
-                            de quedas, nem um dia dominando os números, nem descompasso entre a
-                            configuração da bomba e o resultado.
-                        </p>
-                    </section>
+                    <div className="mt-10">
+                        <EmptyState kind="settled" title="Nenhum padrão para apontar neste período">
+                            <p className="text-emerald-900/80 dark:text-emerald-200/80">
+                                As dez verificações rodaram e nenhuma encontrou algo que valesse
+                                destacar. Isso é uma boa notícia: quer dizer que não houve
+                                concentração de quedas, nem um dia dominando os números, nem
+                                descompasso entre a configuração da bomba e o resultado.
+                            </p>
+                        </EmptyState>
+                    </div>
                 )}
 
                 {/* ⚠️ ACIMA dos achados, e só quando existe. A narrativa
@@ -116,26 +115,28 @@ export default function Evaluation({
                 {/* Falha de regra aparece. Esconder falha é o mesmo que não ter
                     falha — mesma decisão dos avisos da tela de importação. */}
                 {rule_failures.length > 0 && (
-                    <section className="mt-8 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/30">
-                        <h2 className="text-sm font-medium text-amber-900 dark:text-amber-200">
-                            Verificações que não puderam ser concluídas
-                        </h2>
-                        <ul className="mt-2 space-y-1 text-xs text-amber-800 dark:text-amber-300">
+                    <Alert
+                        tone="caution"
+                        title="Verificações que não puderam ser concluídas"
+                        className="mt-8"
+                    >
+                        <ul className="space-y-1 text-xs">
                             {rule_failures.map((failure) => (
                                 <li key={failure.rule_id}>
                                     {failure.rule_id}: {failure.message}
                                 </li>
                             ))}
                         </ul>
-                        <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
+                        {/* ⚠️ Falha de regra APARECE. Esconder falha é o mesmo que
+                            não ter falha — mesma decisão dos avisos da importação. */}
+                        <p className="mt-2 text-xs opacity-80">
                             As demais rodaram normalmente — o que aparece acima está completo para
                             elas.
                         </p>
-                    </section>
+                    </Alert>
                 )}
 
-                <ClinicalFooter />
-            </div>
+            </AppShell>
         </>
     );
 }

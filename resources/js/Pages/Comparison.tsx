@@ -1,8 +1,8 @@
 import { Head, Link } from '@inertiajs/react';
 
-import { ClinicalFooter } from '@/Components/ClinicalFooter';
 import { DeltaCard } from '@/Components/DeltaCard';
 import type { ComparisonPagePayload } from '@/types';
+import AppShell from '@/Layouts/AppShell';
 
 /**
  * Tela de comparação entre períodos (Spec 007, FR-704, §8.4).
@@ -26,7 +26,7 @@ export default function Comparison({
         <>
             <Head title="Comparar períodos" />
 
-            <div className="mx-auto max-w-3xl px-6 py-10">
+            <AppShell>
                 <header>
                     <h1 className="text-2xl font-semibold tracking-tight">Comparar períodos</h1>
                     <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -42,7 +42,7 @@ export default function Comparison({
                         </p>
                         <Link
                             href="/importar"
-                            className="mt-4 inline-block text-sm font-medium text-sky-700 hover:underline dark:text-sky-400"
+                            className="mt-4 inline-block text-sm font-medium text-brand-700 hover:underline dark:text-brand-300"
                         >
                             Ir para importação →
                         </Link>
@@ -94,8 +94,7 @@ export default function Comparison({
                     </>
                 )}
 
-                <ClinicalFooter />
-            </div>
+            </AppShell>
         </>
     );
 }

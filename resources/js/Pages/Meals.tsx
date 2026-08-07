@@ -1,8 +1,8 @@
 import { Head } from '@inertiajs/react';
 
-import { ClinicalFooter } from '@/Components/ClinicalFooter';
 import { MealRow } from '@/Components/MealRow';
 import type { MealsPagePayload } from '@/types';
+import AppShell from '@/Layouts/AppShell';
 
 /**
  * Tela de refeições (Spec 007, FR-702, §10.5).
@@ -23,7 +23,7 @@ export default function Meals({ period, meals, groups, meal_count, labelled_coun
         <>
             <Head title="Refeições" />
 
-            <div className="mx-auto max-w-4xl px-6 py-10">
+            <AppShell>
                 <header>
                     <h1 className="text-2xl font-semibold tracking-tight">Refeições</h1>
                     <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -136,8 +136,7 @@ export default function Meals({ period, meals, groups, meal_count, labelled_coun
                     </section>
                 )}
 
-                <ClinicalFooter />
-            </div>
+            </AppShell>
         </>
     );
 }

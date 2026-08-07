@@ -44,6 +44,10 @@ void createInertiaApp({
     progress: {
         // Cobre a navegação entre páginas. O progresso da importação de CSV é
         // outro assunto: o job roda em fila, e a tela dele é o T206.
-        color: '#0ea5e9',
+        //
+        // ⚠️ Roxo da marca, não a menta (Spec 008 §D2): verde tem significado
+        // clínico neste produto. `brand-500`, e não `brand-700`, para continuar
+        // visível sobre o tema escuro.
+        color: '#443c9b',
     },
 });

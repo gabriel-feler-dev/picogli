@@ -32,7 +32,7 @@ export function FindingCard({ finding }: { finding: PresentedFindingPayload }) {
             {/* Artigo VI, camada 3 — R6 termina devolvendo a pergunta ao médico,
                 e o selo torna isso visível antes mesmo de ler o texto. */}
             {finding.requires_clinical_handoff && (
-                <p className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-sky-50 px-3 py-1.5 text-xs font-medium text-sky-900 dark:bg-sky-950/50 dark:text-sky-200">
+                <p className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-900 dark:bg-brand-500/15 dark:text-brand-100">
                     <span aria-hidden="true">✚</span>
                     Vale conversar com seu médico
                 </p>
@@ -43,7 +43,7 @@ export function FindingCard({ finding }: { finding: PresentedFindingPayload }) {
                     type="button"
                     onClick={() => setShowEvidence(!showEvidence)}
                     aria-expanded={showEvidence}
-                    className="text-xs font-medium text-sky-700 hover:underline dark:text-sky-400"
+                    className="text-xs font-medium text-brand-700 hover:underline dark:text-brand-300"
                 >
                     {showEvidence ? 'Ocultar os números' : 'Ver os números'}
                 </button>
