@@ -297,3 +297,64 @@ export interface MealsPagePayload {
     meal_count: number;
     labelled_count: number;
 }
+
+/**
+ * Uma métrica nos dois períodos (Spec 007, FR-704).
+ *
+ * ⚠️ `conclusive` é decidido no SERVIDOR — escolher se uma diferença pode ser
+ * lida como tendência é significado clínico, não layout. E `false` não esconde o
+ * número: mostra com o motivo do lado.
+ *
+ * ⚠️ `delta` é `null` quando um dos lados não tem o número. Preencher com zero
+ * seria inventar a diferença — do pior tipo, porque sai plausível.
+ */
+export interface ComparedMetricPayload {
+    key: string;
+    label: string;
+    value_a: number | null;
+    value_b: number | null;
+    delta: number | null;
+    unit: string;
+    direction: 'up' | 'down' | 'flat' | 'unknown';
+    conclusive: boolean;
+    inconclusive_reason: string | null;
+}
+
+/** Um lado da comparação, com o denominador (Artigo V). */
+export interface ComparisonSidePayload {
+    from: string;
+    to: string;
+    days_span: number;
+    coverage_percent: number;
+    reading_count: number;
+    validity: string;
+    is_valid: boolean;
+}
+
+export interface ComparisonPagePayload {
+    has_data: boolean;
+    /** Erro acionável do validador de período ("peça um recorte menor"). */
+    error?: string | null;
+    period_a?: ComparisonSidePayload;
+    period_b?: ComparisonSidePayload;
+    metrics?: ComparedMetricPayload[];
+}
+
+/**
+ * Um número lido de relatório em PDF (Spec 007, FR-706).
+ *
+ * ⚠️ `source` é sempre `'pdf_aggregate'`. Ele viaja para que a tela não tenha como
+ * esquecer de marcar — exibir procedência mais fraca sem distinção é o Artigo V
+ * por analogia.
+ */
+export interface PdfAggregatePayload {
+    metric: string;
+    label: string;
+    value: number;
+    unit: string;
+    period_start: string;
+    period_end: string;
+    source: 'pdf_aggregate';
+    /** O período tem CSV? Então este resumo é redundante, e a tela diz isso. */
+    superseded_by_csv: boolean;
+}

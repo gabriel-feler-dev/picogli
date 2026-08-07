@@ -3,12 +3,19 @@ import { useEffect, useState } from 'react';
 
 import { ClinicalFooter } from '@/Components/ClinicalFooter';
 import { ImportSummary } from '@/Components/ImportSummary';
-import type { ImportSummaryPayload } from '@/types';
+import { PdfAggregateBlock } from '@/Components/PdfAggregateBlock';
+import type { ImportSummaryPayload, PdfAggregatePayload } from '@/types';
 
 interface Props {
     imports: ImportSummaryPayload[];
     timezones: string[];
     defaultTimezone: string;
+    /**
+     * ⚠️ Resumos de PDF (Spec 007, §D7). Bloco SEPARADO, nunca misturado com
+     * métrica de CSV — e vazio quando nenhum PDF foi importado, o que mantém
+     * esta tela idêntica à de antes da fase 7.
+     */
+    pdfAggregates: PdfAggregatePayload[];
 }
 
 /**
@@ -18,7 +25,9 @@ interface Props {
  * parcial**. Uma tela que só dissesse "importado com sucesso" não protegeria
  * contra nada — o resumo detalhado é o requisito, não um extra.
  */
-export default function Import({ imports, timezones, defaultTimezone }: Props) {
+export default function Import({ imports, timezones, defaultTimezone,
+    pdfAggregates,
+}: Props) {
     const { data, setData, post, processing, errors, progress } = useForm<{
         file: File | null;
         timezone: string;
@@ -175,6 +184,9 @@ export default function Import({ imports, timezones, defaultTimezone }: Props) {
                         </div>
                     )}
                 </section>
+
+                {/* ⚠️ Não renderiza nada quando a lista é vazia (§D7, T607). */}
+                <PdfAggregateBlock aggregates={pdfAggregates} />
 
                 <ClinicalFooter />
             </div>

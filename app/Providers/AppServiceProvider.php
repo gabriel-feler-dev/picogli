@@ -16,6 +16,7 @@ use App\Domain\Ai\NumberGuard;
 use App\Domain\Ai\PayloadSanitizer;
 use App\Domain\Ai\PromptBuilder;
 use App\Domain\Ai\Provider;
+use App\Domain\Import\Pdf\PdfAggregateReader;
 use App\Domain\Metrics\MetricsConfig;
 use App\Domain\Patterns\DaypartAggregator;
 use App\Domain\Patterns\PatternEngine;
@@ -28,6 +29,7 @@ use App\Infrastructure\Ai\CacheCooldownStore;
 use App\Infrastructure\Ai\FileChatPromptBuilder;
 use App\Infrastructure\Ai\FilePromptBuilder;
 use App\Infrastructure\Ai\GeminiProvider;
+use App\Infrastructure\Import\TextPdfReader;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Request;
@@ -293,6 +295,23 @@ class AppServiceProvider extends ServiceProvider
         // A MESMA classe que responde por `Provider` — um arquivo só conhece o
         // endpoint (Artigo VII), e há teste varrendo `app/` para provar.
         $this->app->bind(ChatProvider::class, fn (): ChatProvider => $this->app->make(Provider::class));
+
+        /*
+         * ⚠️ O leitor de PDF (Spec 007, item 3). Os PADRÕES vêm de
+         * `config/pdf.php`, e estão marcados lá como NÃO VERIFICADOS contra um
+         * relatório real — não havia PDF de amostra no projeto.
+         *
+         * ⚠️ Só texto e tabela: nenhum número vem de pixel (§D5, `PicoGli.md`
+         * §6.3). Há teste varrendo o diretório por OCR e multimodal.
+         */
+        $this->app->singleton(
+            PdfAggregateReader::class,
+            fn (): PdfAggregateReader => new TextPdfReader(
+                config('pdf.labels'),
+                config('pdf.period_labels'),
+                (int) config('pdf.value_window_chars'),
+            ),
+        );
 
         // ⚠️ As dez regras registradas num lugar só. A ORDEM AQUI NÃO IMPORTA
         // para o usuário: o motor ordena por (severidade, rank), e o rank vem do

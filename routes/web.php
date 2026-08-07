@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\ComparisonController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EvaluationController;
 use App\Http\Controllers\ImportController;
@@ -31,6 +32,13 @@ Route::middleware('auth')->group(function (): void {
 
     Route::get('/importar', [ImportController::class, 'index'])->name('imports.index');
     Route::post('/importar', [ImportController::class, 'store'])->name('imports.store');
+
+    /*
+     * Fase 7 — comparação entre períodos. ⚠️ A tela reusa o `ComparePeriodsTool`
+     * do chat: se as duas calculassem separado, elas poderiam discordar sobre a
+     * mesma semana (Spec 007 §D1).
+     */
+    Route::get('/comparar', ComparisonController::class)->name('comparison');
 
     /*
      * Fase 7 — refeições. ⚠️ O rótulo é o primeiro dado do produto que não vem
