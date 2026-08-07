@@ -245,3 +245,55 @@ export interface ChatPagePayload {
     /** Sem importação, o chat não tem sobre o que conversar. */
     has_data: boolean;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Fase 7 — refeições (Spec 007)
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Uma refeição, com a resposta glicêmica que o `MealEnricher` apurou.
+ *
+ * ⚠️ Todo número vem de COLUNA, não de cálculo (§D1). `null` é estado normal:
+ * refeição sem leitura de sensor por perto não tem resposta apurável.
+ */
+export interface MealRowPayload {
+    id: number;
+    at: string;
+    local_date: string;
+    /** Input do usuário. ⚠️ Rotula e agrupa; nunca entra em fórmula (§D2). */
+    label: string | null;
+    carbs_g: number | null;
+    carb_ratio: number | null;
+    /** A glicose que a calculadora da bomba usou — o número que a pessoa viu. */
+    bg_input: number | null;
+    peak_2h: number | null;
+    delta_2h: number | null;
+    glucose_4h: number | null;
+    has_response: boolean;
+}
+
+/**
+ * Refeições agrupadas por rótulo.
+ *
+ * ⚠️ `meal_count` é o denominador e nunca sai de vista (Artigo V) — "pizza sobe
+ * 87 mg/dL" sobre duas refeições é ruído com cara de conclusão.
+ */
+export interface MealGroupPayload {
+    label: string;
+    meal_count: number;
+    with_response_count: number;
+    mean_delta_2h: number | null;
+    mean_carbs_g: number | null;
+    /** Decidido no SERVIDOR: se um número é interpretável é significado, não layout. */
+    has_enough_sample: boolean;
+}
+
+export interface MealsPagePayload {
+    period: { from: string; to: string };
+    meals: MealRowPayload[];
+    groups: MealGroupPayload[];
+    meal_count: number;
+    labelled_count: number;
+}

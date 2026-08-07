@@ -6,6 +6,7 @@ use App\Domain\Ai\Chat\ToolRegistry;
 use App\Domain\Ai\Chat\Value\ChatScope;
 use App\Domain\Ai\Chat\Value\ToolCall;
 use App\Domain\Ai\Chat\Value\ToolResult;
+use App\Models\Meal;
 use App\Models\User;
 
 /**
@@ -257,23 +258,52 @@ it('get_device_events filtra por categoria', function () {
     expect($rewinds->data['event_count'])->toBeLessThan($todos);
 });
 
-it('get_meals calcula a resposta de 2 h em PHP', function () {
+/**
+ * ⚠️⚠️ **`get_meals` LÊ a resposta glicêmica; não a recalcula.**
+ *
+ * A primeira versão desta ferramenta recalculava `peak_2h` e `delta_2h` a partir
+ * da série — e estava errada, não por aritmética, mas por criar a segunda fonte
+ * de verdade que o §D1 existe para impedir. Pior: divergia de propósito, porque o
+ * `MealEnricher` da fase 1 usa `bg_input` como partida do delta (a glicose que a
+ * calculadora da bomba usou, e que a pessoa VIU na tela).
+ *
+ * Este teste é a rede: o que a ferramenta devolve é **igual ao que está gravado**.
+ */
+it('get_meals devolve exatamente o que o MealEnricher gravou', function () {
     $r = chamar('get_meals', periodo());
 
     expect($r->data['meal_count'])->toBeGreaterThan(0);
 
     $comResposta = collect($r->data['rows'])->firstWhere(
-        fn (array $l): bool => $l['glucose_at_start'] !== null && $l['peak_2h'] !== null
+        fn (array $l): bool => $l['peak_2h'] !== null && $l['delta_2h'] !== null
     );
 
     expect($comResposta)->not->toBeNull();
 
-    // ⚠️ O delta já vem calculado: o modelo receberia uma lista de leituras e
-    // teria de achar o pico — isto é, calcular (Artigo I).
-    expect($comResposta['delta_2h'])->toBe($comResposta['peak_2h'] - $comResposta['glucose_at_start']);
+    $gravada = Meal::where('user_id', $this->user->id)
+        ->where('recorded_at_local', 'like', substr($comResposta['at'], 0, 16).'%')
+        ->firstOrFail();
 
-    // O pico é sempre >= a leitura inicial: ele inclui o próprio momento.
-    expect($comResposta['peak_2h'])->toBeGreaterThanOrEqual($comResposta['glucose_at_start']);
+    expect($comResposta['peak_2h'])->toBe($gravada->peak_2h);
+    expect($comResposta['delta_2h'])->toBe($gravada->delta_2h);
+    expect($comResposta['glucose_4h'])->toBe($gravada->glucose_4h);
+    expect($comResposta['bg_input'])->toBe($gravada->bg_input);
+});
+
+/**
+ * ⚠️ O delta usa `bg_input` como partida — decisão da fase 1, e a razão está
+ * escrita lá: é o número que a pessoa viu na tela da bomba, e "meu app discorda
+ * da minha bomba" é a forma mais rápida de perder confiança.
+ */
+it('o delta parte da glicose que a calculadora usou, não do sensor', function () {
+    $r = chamar('get_meals', periodo());
+
+    $comInput = collect($r->data['rows'])->firstWhere(
+        fn (array $l): bool => $l['bg_input'] !== null && $l['delta_2h'] !== null && $l['peak_2h'] !== null
+    );
+
+    expect($comInput)->not->toBeNull();
+    expect($comInput['delta_2h'])->toBe($comInput['peak_2h'] - $comInput['bg_input']);
 });
 
 it('get_meals filtra por carboidrato mínimo', function () {

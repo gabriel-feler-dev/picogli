@@ -7,6 +7,7 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EvaluationController;
 use App\Http\Controllers\ImportController;
+use App\Http\Controllers\MealsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -30,6 +31,14 @@ Route::middleware('auth')->group(function (): void {
 
     Route::get('/importar', [ImportController::class, 'index'])->name('imports.index');
     Route::post('/importar', [ImportController::class, 'store'])->name('imports.store');
+
+    /*
+     * Fase 7 — refeições. ⚠️ O rótulo é o primeiro dado do produto que não vem
+     * do aparelho (Spec 007 §D2). Ele ROTULA, agrupa e filtra — nunca entra em
+     * fórmula cujo resultado o produto apresenta como medição.
+     */
+    Route::get('/refeicoes', [MealsController::class, 'index'])->name('meals.index');
+    Route::patch('/refeicoes/{meal}/rotulo', [MealsController::class, 'label'])->name('meals.label');
 
     /*
      * Fase 6 — chat. O modelo consulta por ferramenta; nenhum dado vai no prompt.

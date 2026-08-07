@@ -7,45 +7,56 @@ namespace App\Domain\Ai\Chat\Persistence;
 use App\Domain\Ai\Chat\Value\ChatScope;
 use App\Domain\Ai\Chat\Value\ToolDescriptor;
 use App\Domain\Ai\Chat\Value\ToolResult;
-use App\Domain\Metrics\Value\GlucoseReading;
 use App\Models\Meal;
-use DateTimeImmutable;
 
 /**
  * `get_meals` — carboidrato declarado e o que a glicose fez depois (FR-602).
  *
- * ⚠️ **A resposta de 2 h é calculada aqui, não descrita para o modelo somar.**
- * Ele receberia "glicose inicial 118, leituras seguintes: 132, 154, 171…" e
- * teria de achar o pico — isto é, calcular. O Artigo I proíbe, e a aritmética
- * sobre listas longas é justamente onde modelos erram com naturalidade.
+ * ## ⚠️ LÊ a resposta glicêmica, não a recalcula
  *
- * ⚠️ **Artigo VI, e este é o caso mais escorregadio da fase.** O campo
- * `carb_ratio` é a razão **vigente** reconstruída do histórico da bomba — é
- * descrição do que estava configurado, nunca proposta de valor novo. Nenhum
- * campo aqui compara o CR com o resultado e sugere outro número; quando um
- * padrão aponta nessa direção, quem responde é a R6, e ela termina devolvendo a
- * pergunta ao médico.
+ * `peak_2h`, `delta_2h` e `glucose_4h` são colunas de `meals`, preenchidas na
+ * importação pelo `MealEnricher` (passo 8 do pipeline, `PicoGli.md` §6.1). Esta
+ * ferramenta **lê**.
  *
- * ⚠️ **Janela de ±10 min para a glicose inicial.** O sensor mede de 5 em 5
- * minutos; se a leitura mais próxima da refeição está a mais de 10 minutos, não
- * existe glicose inicial confiável e o campo sai `null` — em vez de um número
- * que parece medido e é chute.
+ * ⚠️ **A primeira versão desta classe recalculava, e estava errada** — não por
+ * bug de aritmética, mas por ter criado a segunda fonte de verdade que o §D1
+ * existe para impedir. E os dois cálculos divergiam de propósito:
+ *
+ * | | Linha de partida do delta |
+ * |---|---|
+ * | `MealEnricher` (fase 1) | **`bg_input`** — a glicose que a calculadora usou |
+ * | esta ferramenta, antes | leitura de sensor mais próxima, ±10 min |
+ *
+ * A escolha do `bg_input` é decisão registrada da fase 1: é o número que a pessoa
+ * **viu na tela da bomba**, e é ele que explica a decisão do bolus. O comentário
+ * de lá diz por quê — *"meu app discorda da minha bomba" é a forma mais rápida de
+ * perder confiança*. Uma ferramenta de chat que devolvesse um delta diferente do
+ * que a tela de refeições mostra produziria exatamente esse desacordo, com o
+ * agravante de ser o modelo dizendo o número.
+ *
+ * ⚠️ **E não carrega a série.** Ler colunas prontas dispensa trazer 3.616
+ * leituras para a memória para responder sobre 40 refeições.
+ *
+ * ## Artigo VI, e este é o caso mais escorregadio da fase
+ *
+ * `carb_ratio` é a razão **vigente** reconstruída do histórico da bomba —
+ * descrição do que estava configurado, nunca proposta de valor novo. Nenhum campo
+ * aqui compara o CR com o resultado e sugere outro número; quando um padrão
+ * aponta nessa direção, quem responde é a R6, e ela termina devolvendo a pergunta
+ * ao médico.
  */
 final class MealsTool extends PeriodTool
 {
-    private const START_WINDOW_MINUTES = 10;
-
-    private const RESPONSE_WINDOW_MINUTES = 120;
-
     public function describe(): ToolDescriptor
     {
         return new ToolDescriptor(
             name: 'get_meals',
             description: 'Refeições registradas no bolus wizard num período: carboidrato '
-                .'declarado, razão de carboidrato vigente na bomba, glicose no momento da '
-                .'refeição, pico glicêmico nas 2 horas seguintes e a variação entre os dois. '
-                .'Aceita filtrar por carboidrato mínimo. Use para "como reagi ao almoço", '
-                .'"quais refeições me subiram mais".',
+                .'declarado, o rótulo que o usuário deu à refeição (quando houver), razão de '
+                .'carboidrato vigente na bomba, glicose que a calculadora '
+                .'usou, pico glicêmico nas 2 horas seguintes, a subida em relação à partida e '
+                .'onde a glicose estava 4 horas depois. Aceita filtrar por carboidrato mínimo. '
+                .'Use para "como reagi ao almoço", "quais refeições me subiram mais".',
             argumentSchema: array_merge(self::PERIOD_SCHEMA, [
                 'min_carbs' => [
                     'type' => 'int',
@@ -56,8 +67,8 @@ final class MealsTool extends PeriodTool
             ]),
             emittedKeys: array_merge(self::PERIOD_KEYS, [
                 'meal_count', 'min_carbs', 'total_carbs_g', 'rows',
-                'at', 'carbs_g', 'carb_ratio',
-                'glucose_at_start', 'peak_2h', 'delta_2h',
+                'at', 'carbs_g', 'carb_ratio', 'label',
+                'bg_input', 'peak_2h', 'delta_2h', 'glucose_4h',
             ]),
         );
     }
@@ -74,34 +85,29 @@ final class MealsTool extends PeriodTool
             $query->where('carbs_g', '>=', $minimo);
         }
 
-        $refeicoes = $query->orderBy('recorded_at_local')
-            ->get(['recorded_at_local', 'carbs_g', 'carb_ratio']);
-
-        // A série entra uma vez só — as refeições são varridas contra ela em
-        // memória, como o `CalibrationPairer` faz com as calibrações.
-        $leituras = $this->series($scope, $from, $to)->readings;
-
         $rows = [];
         $somaCarbs = 0.0;
 
-        foreach ($refeicoes as $refeicao) {
-            $momento = new DateTimeImmutable($refeicao->recorded_at_local->format('Y-m-d H:i:s'));
-            $inicial = $this->glucoseNear($leituras, $momento);
-            $pico = $this->peakWithin($leituras, $momento);
-
+        foreach ($query->orderBy('recorded_at_local')->get() as $refeicao) {
             $somaCarbs += (float) $refeicao->carbs_g;
 
             $rows[] = [
-                'at' => $momento->format('Y-m-d H:i'),
+                'at' => $refeicao->recorded_at_local->format('Y-m-d H:i'),
+                // ⚠️ Rótulo do usuário (Spec 007). Entra em `emittedKeys`, e a
+                // allowlist do Artigo VII é DERIVADA dos descritores — a chave
+                // passa a ser permitida sozinha, sem editar config.
+                'label' => $refeicao->label,
                 'carbs_g' => $this->round((float) $refeicao->carbs_g),
                 'carb_ratio' => $refeicao->carb_ratio === null
                     ? null
                     : $this->round((float) $refeicao->carb_ratio),
-                'glucose_at_start' => $inicial,
-                'peak_2h' => $pico,
-                // ⚠️ A variação só existe se os DOIS lados existirem. Um delta
-                // calculado contra um início ausente seria número inventado.
-                'delta_2h' => $inicial !== null && $pico !== null ? $pico - $inicial : null,
+                // ⚠️ Tudo daqui para baixo vem de coluna, não de cálculo. `null`
+                // é estado normal: refeição sem leitura de sensor por perto não
+                // tem resposta glicêmica apurável, e inventar uma seria pior.
+                'bg_input' => $refeicao->bg_input,
+                'peak_2h' => $refeicao->peak_2h,
+                'delta_2h' => $refeicao->delta_2h,
+                'glucose_4h' => $refeicao->glucose_4h,
             ];
         }
 
@@ -111,52 +117,5 @@ final class MealsTool extends PeriodTool
             'total_carbs_g' => $this->round($somaCarbs),
             'rows' => $rows,
         ]));
-    }
-
-    /**
-     * A leitura mais próxima do momento, dentro da janela.
-     *
-     * @param  list<GlucoseReading>  $leituras
-     */
-    private function glucoseNear(array $leituras, DateTimeImmutable $momento): ?int
-    {
-        $melhor = null;
-        $menorDistancia = null;
-
-        foreach ($leituras as $leitura) {
-            $distancia = abs($leitura->at->getTimestamp() - $momento->getTimestamp()) / 60;
-
-            if ($distancia > self::START_WINDOW_MINUTES) {
-                continue;
-            }
-
-            if ($menorDistancia === null || $distancia < $menorDistancia) {
-                $menorDistancia = $distancia;
-                $melhor = $leitura->mgdl;
-            }
-        }
-
-        return $melhor;
-    }
-
-    /**
-     * O maior valor nas 2 horas seguintes.
-     *
-     * @param  list<GlucoseReading>  $leituras
-     */
-    private function peakWithin(array $leituras, DateTimeImmutable $momento): ?int
-    {
-        $limite = $momento->modify('+'.self::RESPONSE_WINDOW_MINUTES.' minutes');
-        $pico = null;
-
-        foreach ($leituras as $leitura) {
-            if ($leitura->at < $momento || $leitura->at > $limite) {
-                continue;
-            }
-
-            $pico = $pico === null ? $leitura->mgdl : max($pico, $leitura->mgdl);
-        }
-
-        return $pico;
     }
 }
