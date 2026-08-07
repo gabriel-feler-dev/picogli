@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { ImportSummary } from '@/Components/ImportSummary';
 import { PdfAggregateBlock } from '@/Components/PdfAggregateBlock';
 import type { ImportSummaryPayload, PdfAggregatePayload } from '@/types';
-import AppShell from '@/Layouts/AppShell';
+import AppShell, { PageHeader } from '@/Layouts/AppShell';
 import { ImportProgress } from '@/Components/ImportProgress';
 import { Alert } from '@/Components/ui/Alert';
 import { Button } from '@/Components/ui/Button';
@@ -68,13 +68,10 @@ export default function Import({ imports, timezones, defaultTimezone,
             <Head title="Importar" />
 
             <AppShell>
-                <header>
-                    <h1 className="text-2xl font-semibold tracking-tight">Importar export do CareLink</h1>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                        Envie o arquivo CSV exportado do CareLink. O arquivo é apagado depois da
-                        importação — os dados ficam no banco.
-                    </p>
-                </header>
+                <PageHeader
+                    title="Importar export do CareLink"
+                    subtitle="Envie o arquivo CSV exportado do CareLink. O arquivo é apagado depois da importação — os dados ficam no banco."
+                />
 
                 {flash !== undefined && (
                     <Alert tone="note" className="mt-6">
@@ -91,8 +88,13 @@ export default function Import({ imports, timezones, defaultTimezone,
                     </div>
                 )}
 
+                {/* ⚠️ §7 do design.md — envio à esquerda, histórico à direita.
+                    Empilhados, o resumo auditável ficava abaixo da dobra, e ele é
+                    a razão de a tela existir: o pior caso da fase 1 é importação
+                    silenciosamente parcial. */}
+                <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
                 <form
-                    className="mt-8 space-y-4"
+                    className="space-y-4 lg:col-span-5"
                     onSubmit={(event) => {
                         event.preventDefault();
                         post('/importar', { forceFormData: true });
@@ -179,7 +181,7 @@ export default function Import({ imports, timezones, defaultTimezone,
                     </Button>
                 </form>
 
-                <section className="mt-12">
+                <section className="lg:col-span-7">
                     <h2 className="text-sm font-semibold">Importações</h2>
 
                     {imports.length === 0 ? (
@@ -194,6 +196,8 @@ export default function Import({ imports, timezones, defaultTimezone,
                         </div>
                     )}
                 </section>
+
+                </div>
 
                 {/* ⚠️ Não renderiza nada quando a lista é vazia (§D7, T607). */}
                 <PdfAggregateBlock aggregates={pdfAggregates} />

@@ -2,7 +2,7 @@ import { Head } from '@inertiajs/react';
 
 import { MealRow } from '@/Components/MealRow';
 import type { MealsPagePayload } from '@/types';
-import AppShell from '@/Layouts/AppShell';
+import AppShell, { PageHeader } from '@/Layouts/AppShell';
 
 /**
  * Tela de refeições (Spec 007, FR-702, §10.5).
@@ -24,15 +24,18 @@ export default function Meals({ period, meals, groups, meal_count, labelled_coun
             <Head title="Refeições" />
 
             <AppShell>
-                <header>
-                    <h1 className="text-2xl font-semibold tracking-tight">Refeições</h1>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                        O que aconteceu com a glicose depois de cada uma
-                    </p>
-                    <p className="mt-3 text-sm text-slate-600 tabular-nums dark:text-slate-300">
-                        {period.from} a {period.to} · {meal_count} refeições · {labelled_count} com rótulo
-                    </p>
-                </header>
+                <PageHeader
+                    title="Refeições"
+                    subtitle={
+                        <>
+                            O que aconteceu com a glicose depois de cada uma
+                            <span className="mt-1 block tabular-nums text-slate-600 dark:text-slate-300">
+                                {period.from} a {period.to} · {meal_count} refeições ·{' '}
+                                {labelled_count} com rótulo
+                            </span>
+                        </>
+                    }
+                />
 
                 {meal_count === 0 && (
                     <div className="mt-8 rounded-lg border border-slate-200 p-6 dark:border-slate-800">

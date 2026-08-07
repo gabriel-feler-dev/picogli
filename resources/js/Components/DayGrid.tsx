@@ -13,10 +13,39 @@ import type { DailyMetricPayload } from '@/types';
  * A INTENSIDADE é proporcional ao TIR. Isso é escala visual, não classificação:
  * não há limiar inventado aqui, só o valor mapeado em opacidade.
  */
+/**
+ * ⚠️ §V8 — a grade só é legível como CALENDÁRIO se as colunas forem dias da
+ * semana. Sem isso, sete colunas são sete colunas quaisquer, e a única razão de
+ * a grade ser uma grade se perde.
+ *
+ * O deslocamento inicial é posicionamento, não medida clínica: `getDay()` diz em
+ * que coluna o primeiro dia cai, e as células antes dele ficam vazias.
+ */
+const DIAS_DA_SEMANA = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'] as const;
+
 export function DayGrid({ days }: { days: DailyMetricPayload[] }) {
+    const primeiro = days[0];
+    const deslocamento =
+        primeiro === undefined ? 0 : new Date(`${primeiro.local_date}T12:00:00`).getDay();
+
     return (
         <figure aria-label="Tempo na faixa em cada dia do período">
+            <div className="mb-1.5 grid grid-cols-7 gap-1.5" aria-hidden="true">
+                {DIAS_DA_SEMANA.map((letra, i) => (
+                    <span
+                        key={i}
+                        className="text-center text-[10px] font-medium text-slate-400 dark:text-slate-500"
+                    >
+                        {letra}
+                    </span>
+                ))}
+            </div>
+
             <div className="grid grid-cols-7 gap-1.5" role="list">
+                {Array.from({ length: deslocamento }).map((_, i) => (
+                    <div key={`vazio-${i}`} aria-hidden="true" />
+                ))}
+
                 {days.map((day) => {
                     const hue = day.tir_status === 'met' ? '16, 185, 129' : '251, 191, 36';
                     // 0,25 a 1,0 — o dia com TIR baixo não desaparece.
@@ -39,7 +68,7 @@ export function DayGrid({ days }: { days: DailyMetricPayload[] }) {
                             role="listitem"
                             aria-label={label}
                             title={label}
-                            className="relative flex h-14 flex-col items-center justify-center rounded-md text-[11px] font-medium"
+                            className="relative flex h-14 flex-col items-center justify-center rounded-lg text-[11px] font-medium transition-transform duration-150 hover:scale-105 motion-reduce:transition-none motion-reduce:hover:scale-100"
                             style={{ backgroundColor: `rgba(${hue}, ${intensity})` }}
                         >
                             {/* Cobertura baixa: hachura + asterisco. Nunca só cor. */}

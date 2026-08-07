@@ -2,7 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 
 import { DeltaCard } from '@/Components/DeltaCard';
 import type { ComparisonPagePayload } from '@/types';
-import AppShell from '@/Layouts/AppShell';
+import AppShell, { PageHeader } from '@/Layouts/AppShell';
 
 /**
  * Tela de comparação entre períodos (Spec 007, FR-704, §8.4).
@@ -27,12 +27,10 @@ export default function Comparison({
             <Head title="Comparar períodos" />
 
             <AppShell>
-                <header>
-                    <h1 className="text-2xl font-semibold tracking-tight">Comparar períodos</h1>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                        Os últimos 7 dias contra os 7 anteriores
-                    </p>
-                </header>
+                <PageHeader
+                    title="Comparar períodos"
+                    subtitle="Os últimos 7 dias contra os 7 anteriores"
+                />
 
                 {!has_data && (
                     <div className="mt-8 rounded-lg border border-slate-200 p-6 dark:border-slate-800">

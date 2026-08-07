@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 
 import { ToolTrace } from '@/Components/ToolTrace';
 import type { ChatPagePayload } from '@/types';
-import AppShell from '@/Layouts/AppShell';
+import AppShell, { PageHeader } from '@/Layouts/AppShell';
 import { Button, ButtonLink } from '@/Components/ui/Button';
 
 /**
@@ -96,12 +96,10 @@ export default function Chat({
                 </aside>
 
                 <main className="min-w-0 flex-1">
-                    <header>
-                        <h1 className="text-2xl font-semibold tracking-tight">Conversar com meus dados</h1>
-                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                            As respostas usam só os números que o PicoGli calculou
-                        </p>
-                    </header>
+                    <PageHeader
+                        title="Conversar com meus dados"
+                        subtitle="As respostas usam só os números que o PicoGli calculou"
+                    />
 
                     {!has_data && (
                         <div className="mt-8 rounded-lg border border-slate-200 p-6 dark:border-slate-800">

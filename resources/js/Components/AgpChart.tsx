@@ -57,6 +57,15 @@ export function AgpChart({ percentiles, ranges }: Props) {
             <div className="h-56 w-full sm:h-72">
             <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 4, left: 0 }}>
+                    {/* §V6 — gradiente vertical nas bandas: densidade visual maior
+                        embaixo, onde a mediana passa. */}
+                    <defs>
+                        <linearGradient id="agp-banda" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#8f86d6" stopOpacity={0.45} />
+                            <stop offset="100%" stopColor="#8f86d6" stopOpacity={0.12} />
+                        </linearGradient>
+                    </defs>
+
                     {/* Faixa-alvo sombreada: a referência de leitura do gráfico. */}
                     <ReferenceArea
                         y1={target.min ?? 0}
@@ -103,16 +112,25 @@ export function AgpChart({ percentiles, ranges }: Props) {
                         o ÚNICO verde do gráfico é o `#10b981` da `ReferenceArea`,
                         que é o vocabulário clínico. */}
                     <Area dataKey="p5" stackId="agp" stroke="none" fill="transparent" isAnimationActive={false} />
-                    <Area dataKey="band25" stackId="agp" stroke="none" fill="#8f86d6" fillOpacity={0.2} isAnimationActive={false} />
-                    <Area dataKey="band75" stackId="agp" stroke="none" fill="#8f86d6" fillOpacity={0.4} isAnimationActive={false} />
-                    <Area dataKey="band95" stackId="agp" stroke="none" fill="#8f86d6" fillOpacity={0.2} isAnimationActive={false} />
+                    <Area dataKey="band25" stackId="agp" stroke="none" fill="url(#agp-banda)" fillOpacity={0.5} isAnimationActive={false} />
+                    <Area dataKey="band75" stackId="agp" stroke="none" fill="url(#agp-banda)" isAnimationActive={false} />
+                    <Area dataKey="band95" stackId="agp" stroke="none" fill="url(#agp-banda)" fillOpacity={0.5} isAnimationActive={false} />
 
+                    {/* ⚠️ §V11 — a LINHA anima, o NÚMERO não.
+                        O traçado se desenhando mostra a forma aparecendo, e a forma
+                        é a mesma no fim: é orientação. Um contador subindo até
+                        "83,9%" encenaria uma conquista que o valor não tem — e
+                        obrigaria o produto a ter encenação para 61%.
+                        Anime o continente, nunca o conteúdo numérico. */}
                     <Line
                         dataKey="p50"
                         stroke="#443c9b"
-                        strokeWidth={2}
+                        strokeWidth={2.5}
+                        strokeLinecap="round"
                         dot={false}
-                        isAnimationActive={false}
+                        isAnimationActive={true}
+                        animationDuration={600}
+                        animationEasing="ease-out"
                     />
                 </ComposedChart>
             </ResponsiveContainer>

@@ -3,7 +3,7 @@ import { Head } from '@inertiajs/react';
 import { FindingCard } from '@/Components/FindingCard';
 import { NarrativeBlock } from '@/Components/NarrativeBlock';
 import type { EvaluationPayload } from '@/types';
-import AppShell from '@/Layouts/AppShell';
+import AppShell, { PageHeader } from '@/Layouts/AppShell';
 import { ButtonLink } from '@/Components/ui/Button';
 import { Alert } from '@/Components/ui/Alert';
 import { EmptyState } from '@/Components/ui/EmptyState';
@@ -40,26 +40,26 @@ export default function Evaluation({
             <Head title="Avaliação" />
 
             <AppShell>
-                <header>
-                    <h1 className="text-2xl font-semibold tracking-tight">Avaliação do período</h1>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                        O que os números mostram além da média
-                    </p>
-
-                    {/* Artigo V — o denominador ao lado, sempre. E é o denominador
-                        DAQUELE relatório, não o de hoje. */}
-                    {period !== null && coverage !== null && (
-                        <p className="mt-3 text-sm tabular-nums text-slate-600 dark:text-slate-300">
-                            {period.label} · {coverage.summary}
-                        </p>
-                    )}
-
-                    {generated_at !== null && (
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                            Gerado em {generated_at}
-                        </p>
-                    )}
-                </header>
+                <PageHeader
+                    title="Avaliação do período"
+                    subtitle={
+                        <>
+                            O que os números mostram além da média
+                            {/* Artigo V — o denominador ao lado, sempre. E é o
+                                denominador DAQUELE relatório, não o de hoje. */}
+                            {period !== null && coverage !== null && (
+                                <span className="mt-1 block tabular-nums text-slate-600 dark:text-slate-300">
+                                    {period.label} · {coverage.summary}
+                                </span>
+                            )}
+                            {generated_at !== null && (
+                                <span className="mt-0.5 block text-xs">
+                                    Gerado em {generated_at}
+                                </span>
+                            )}
+                        </>
+                    }
+                />
 
                 {/* §D9 — sinaliza, nunca recalcula em silêncio. */}
                 {is_stale && (
@@ -102,10 +102,20 @@ export default function Evaluation({
                 {/* ⚠️ ACIMA dos achados, e só quando existe. A narrativa
                     enriquece a tela; não substitui nada. Sem ela, a página é
                     exatamente a de ontem (Artigo I, §D3). */}
-                {narrative !== null && <NarrativeBlock narrative={narrative} />}
+                {/* ⚠️ Coluna de LEITURA para a narrativa (T713.5). Texto corrido é
+                    a única coisa que ainda merece largura estreita: uma linha de
+                    1400 px é ilegível. A grade é para dado, não para prosa. */}
+                {narrative !== null && (
+                    <div className="max-w-prose">
+                        <NarrativeBlock narrative={narrative} />
+                    </div>
+                )}
 
+                {/* Os achados chegam ORDENADOS do servidor — severidade e depois
+                    rank. Duas colunas preservam a ordem: o navegador preenche na
+                    horizontal, então o primeiro achado continua sendo o primeiro. */}
                 {findings.length > 0 && (
-                    <section className="mt-8 space-y-4">
+                    <section className="mt-8 grid gap-4 lg:grid-cols-2">
                         {findings.map((finding) => (
                             <FindingCard key={finding.rule_id + finding.rank} finding={finding} />
                         ))}

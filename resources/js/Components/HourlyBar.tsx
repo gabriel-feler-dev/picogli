@@ -15,7 +15,10 @@ import { emptyCell, rangePalette } from './rangePalette';
 export function HourlyBar({ profile }: { profile: HourlyBucketPayload[] }) {
     return (
         <figure aria-label="Faixa predominante da glicose em cada hora do dia">
-            <div className="flex gap-0.5" role="list">
+            {/* ⚠️ §V7 — faixa CONTÍNUA, sem espaço entre as horas, arredondada só
+                nas pontas. Antes eram 24 retângulos soltos, e lia-se como 24
+                caixas; um dia é contínuo, e a forma tem de dizer isso. */}
+            <div className="flex overflow-hidden rounded-lg" role="list">
                 {profile.map((bucket) => {
                     const style = bucket.dominant_range === null
                         ? emptyCell
@@ -31,7 +34,7 @@ export function HourlyBar({ profile }: { profile: HourlyBucketPayload[] }) {
                             role="listitem"
                             aria-label={label}
                             title={label}
-                            className="h-8 flex-1 rounded-sm"
+                            className="h-11 flex-1 transition-opacity duration-150 hover:opacity-80"
                             style={{ backgroundColor: style.fill, opacity: bucket.count === 0 ? 0.35 : 1 }}
                         />
                     );

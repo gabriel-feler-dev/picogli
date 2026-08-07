@@ -13,7 +13,9 @@
       "PowerShell(& \"$env:USERPROFILE\\\\php84\\\\php.exe\" artisan test --filter='ArticleOne|ChatArticle|PhaseSevenRegression|ThemeAndBrand|ChatScreen|NarrativeScreen|EvaluationScreen|Comparison|MealLabel|PdfAggregate|InertiaWiring|NoStatisticsInJavaScript' 2>&1 | Select-Object -Last 60)",
       "Bash(grep -v \"^--$\")",
       "PowerShell(& \"$env:USERPROFILE\\\\php84\\\\php.exe\" artisan test --filter='ArticleOne|ChatArticle|PhaseSevenRegression|ThemeAndBrand|ChatScreen|NarrativeScreen|EvaluationScreen|Comparison|MealLabel|PdfAggregate|InertiaWiring|NoStatisticsInJavaScript' 2>&1 | Select-Object -Last 25)",
-      "PowerShell(& \"$env:USERPROFILE\\\\php84\\\\php.exe\" artisan test 2>&1 | Select-Object -Last 20)"
+      "PowerShell(& \"$env:USERPROFILE\\\\php84\\\\php.exe\" artisan test 2>&1 | Select-Object -Last 20)",
+      "WebSearch",
+      "PowerShell(& \"$env:USERPROFILE\\\\php84\\\\php.exe\" artisan test --filter='ArticleOne|ChatArticle|PhaseSevenRegression|ThemeAndBrand|ChatScreen|NarrativeScreen|EvaluationScreen|Comparison|MealLabel|PdfAggregate|InertiaWiring|NoStatisticsInJavaScript' 2>&1 | Select-Object -Last 8)"
     ]
   }
 }
