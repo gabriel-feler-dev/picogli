@@ -87,7 +87,7 @@ export default function Dashboard({ summary, isEmpty }: Props) {
                                 </div>
                             )}
 
-                            <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2 lg:col-span-7 lg:grid-cols-2">
+                            <div className="grid gap-4 sm:grid-cols-2 lg:col-span-7 lg:grid-cols-2">
                                 {demais.map((metric) => (
                                     <MetricCard key={metric.key} metric={metric} />
                                 ))}
@@ -96,7 +96,7 @@ export default function Dashboard({ summary, isEmpty }: Props) {
 
                         {/* ── Faixa 2: o dia típico, largo ───────────────────── */}
                         <Grid>
-                            <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:col-span-2 lg:col-span-12 dark:border-slate-800 dark:bg-slate-900">
+                            <section className="rounded-2xl border border-slate-200 bg-white p-5 lg:col-span-12 dark:border-slate-800 dark:bg-slate-900">
                                 <h2 className="text-sm font-semibold">Seu dia típico</h2>
                                 <p className="mt-0.5 mb-4 text-xs text-slate-500 dark:text-slate-400">
                                     Todos os dias do período sobrepostos, hora por hora.
@@ -108,10 +108,23 @@ export default function Dashboard({ summary, isEmpty }: Props) {
                                 />
 
                                 <Explainer>
-                                    A linha do meio é a mediana: metade das leituras daquele horário
-                                    ficou acima dela e metade abaixo. As faixas mais claras mostram
-                                    onde ficaram 50% e 90% das leituras — quanto mais larga, mais a
-                                    glicose variou naquele horário entre um dia e outro.
+                                    <p>
+                                        Este gráfico empilha todos os dias do período num dia só. A
+                                        linha escura é a <strong className="font-medium">mediana</strong>:
+                                        naquele horário, metade das leituras ficou acima dela e metade
+                                        abaixo. A faixa clara em volta mostra onde ficaram 90% delas.
+                                    </p>
+                                    <p className="mt-2">
+                                        <strong className="font-medium">O que procurar:</strong> onde a
+                                        faixa fica <em>larga</em>, a glicose variou muito naquele
+                                        horário de um dia para o outro — é um horário imprevisível.
+                                        Onde ela fica estreita, os dias se repetem.
+                                    </p>
+                                    <p className="mt-2">
+                                        Buracos no traçado são horas em que o sensor não estava
+                                        medindo. A linha não atravessa o vazio de propósito: ligar os
+                                        pontos ali inventaria uma medição que não existiu.
+                                    </p>
                                 </Explainer>
                             </section>
                         </Grid>
@@ -127,10 +140,19 @@ export default function Dashboard({ summary, isEmpty }: Props) {
                                 <HourlyBar profile={summary.hourly_profile} />
 
                                 <Explainer>
-                                    Cada fatia é uma hora do dia, colorida pela faixa em que a
-                                    glicose mais ficou naquele horário ao longo do período. Serve
-                                    para achar o horário que mais se repete — madrugada, depois do
-                                    almoço, fim de tarde.
+                                    <p>
+                                        Cada fatia é uma hora do dia, pintada com a faixa em que sua
+                                        glicose mais ficou naquele horário ao longo de todo o período.
+                                    </p>
+                                    <p className="mt-2">
+                                        <strong className="font-medium">O que procurar:</strong> blocos
+                                        de cor seguidos. Uma hora amarela isolada é ruído; três horas
+                                        amarelas em sequência todo fim de tarde é um padrão — e é o
+                                        tipo de coisa que a tela de avaliação transforma em achado.
+                                    </p>
+                                    <p className="mt-2">
+                                        Fatias mais apagadas são horas com poucas leituras do sensor.
+                                    </p>
                                 </Explainer>
                             </section>
 
@@ -143,13 +165,27 @@ export default function Dashboard({ summary, isEmpty }: Props) {
                                 <DayGrid days={summary.daily_metrics} />
 
                                 <Explainer>
-                                    <Sigla
-                                        sigla="TIR"
-                                        significado="Time in Range — tempo na faixa de 70 a 180 mg/dL"
-                                    />{' '}
-                                    é a fatia do dia em que a glicose ficou entre 70 e 180 mg/dL.
-                                    Dias com hachura tiveram menos leituras do sensor, então o
-                                    número deles é menos comparável com os outros.
+                                    <p>
+                                        Cada quadrado é um dia, e o número dentro dele é o{' '}
+                                        <Sigla
+                                            sigla="TIR"
+                                            significado="Time in Range — tempo na faixa de 70 a 180 mg/dL"
+                                        />{' '}
+                                        — a fatia daquele dia em que a glicose ficou entre 70 e
+                                        180 mg/dL. Quanto mais forte a cor, maior o tempo na faixa.
+                                    </p>
+                                    <p className="mt-2">
+                                        <strong className="font-medium">O que procurar:</strong> a
+                                        posição na semana. Se os quadrados fracos caem sempre na mesma
+                                        coluna, o padrão é de dia da semana — fim de semana, dia de
+                                        treino, dia de plantão.
+                                    </p>
+                                    <p className="mt-2">
+                                        ⚠️ Dias com hachura e <span aria-hidden="true">*</span>{' '}
+                                        tiveram menos leituras do sensor. O número deles não é
+                                        comparável com o dos outros: 80% de meio dia de dado não é a
+                                        mesma coisa que 80% de um dia inteiro.
+                                    </p>
                                 </Explainer>
                             </section>
                         </Grid>

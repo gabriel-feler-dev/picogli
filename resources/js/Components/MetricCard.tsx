@@ -53,16 +53,20 @@ export function MetricCard({
             className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 transition-shadow duration-150 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900"
             aria-label={`${metric.label}: ${metric.plain_value}, ${style.label}`}
         >
-            <div className="flex items-start justify-between gap-3">
-                <h2 className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
+            {/* ⚠️ `flex-wrap` e `min-w-0`: "estimativa pouco confiável" ao lado de
+                um rótulo longo estourava a largura do card e empurrava a borda.
+                Sem espaço, o selo desce para a linha de baixo em vez de espremer
+                o título. */}
+            <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+                <h2 className="min-w-0 text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
                     {metric.label}
                 </h2>
 
                 {/* NFR-203 — a cor nunca é o único sinal: ponto E rótulo textual. */}
                 <span
-                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${style.chip}`}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${style.chip}`}
                 >
-                    <span className={`size-1.5 rounded-full ${style.dot}`} aria-hidden="true" />
+                    <span className={`size-1.5 shrink-0 rounded-full ${style.dot}`} aria-hidden="true" />
                     {style.label}
                 </span>
             </div>

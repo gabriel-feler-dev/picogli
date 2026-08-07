@@ -68,7 +68,11 @@ export function DayGrid({ days }: { days: DailyMetricPayload[] }) {
                             role="listitem"
                             aria-label={label}
                             title={label}
-                            className="relative flex h-14 flex-col items-center justify-center rounded-lg text-[11px] font-medium transition-transform duration-150 hover:scale-105 motion-reduce:transition-none motion-reduce:hover:scale-100"
+                            // ⚠️ Realce por anel, não por `scale`. O `hover:scale`
+                            // estourava a célula para fora da grade nas bordas e
+                            // era cortado — e nas colunas do meio empurrava o
+                            // vizinho. Anel cresce para dentro.
+                            className="relative flex h-14 flex-col items-center justify-center rounded-lg text-[11px] font-medium ring-slate-900/0 transition-[box-shadow] duration-150 hover:ring-2 hover:ring-slate-900/20 dark:hover:ring-white/30"
                             style={{ backgroundColor: `rgba(${hue}, ${intensity})` }}
                         >
                             {/* Cobertura baixa: hachura + asterisco. Nunca só cor. */}

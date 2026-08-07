@@ -213,7 +213,7 @@ function TopBar({ url }: { url: string }) {
  */
 export function Grid({ children, className }: { children: ReactNode; className?: string }) {
     return (
-        <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-12 ${className ?? ''}`}>
+        <div className={`grid grid-cols-1 gap-4 lg:grid-cols-12 ${className ?? ''}`}>
             {children}
         </div>
     );

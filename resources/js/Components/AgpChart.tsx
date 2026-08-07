@@ -56,7 +56,9 @@ export function AgpChart({ percentiles, ranges }: Props) {
                 espremido numa ponta e esticado na outra. */}
             <div className="h-56 w-full sm:h-72">
             <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 4, left: 0 }}>
+                {/* ⚠️ `left: 8` — com 0 o rótulo "mg/dL", que é girado 90°,
+                    ficava metade fora da área de desenho e era cortado. */}
+                <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
                     {/* §V6 — gradiente vertical nas bandas: densidade visual maior
                         embaixo, onde a mediana passa. */}
                     <defs>
